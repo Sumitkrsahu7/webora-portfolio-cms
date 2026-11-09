@@ -1,4 +1,4 @@
-﻿export const environment = {
+export const environment = {
   production: true,
-  apiUrl: 'https://YOUR-BACKEND-DOMAIN/api'
+  apiUrl: 'https://webora-backend-8e4b.onrender.com/api'
 };
