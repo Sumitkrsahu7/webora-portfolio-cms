@@ -103,6 +103,19 @@ interface Inquiry {
   updatedAt: string;
 }
 
+interface AdminProfile {
+  email: string;
+  role: string;
+}
+
+interface Administrator {
+  id: string;
+  email: string;
+  role: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -217,6 +230,18 @@ interface Inquiry {
             <span>↗</span> Inquiries
           </button>
 
+          @if (currentAdminRole === 'SUPER_ADMIN') {
+            <p class="nav-label">ACCESS CONTROL</p>
+
+            <button
+              class="nav-item"
+              [class.active]="view === 'administrators'"
+              (click)="navigate('administrators')"
+            >
+              <span>⚙</span> Administrators
+            </button>
+          }
+
           <div class="sidebar-bottom">
             <div class="user-avatar">W</div>
             <div>
@@ -253,6 +278,7 @@ interface Inquiry {
                   view === 'profile' ? 'Profile' :
                   view === 'testimonials' ? 'Testimonials' :
                   view === 'inquiries' ? 'Inquiries' :
+                  view === 'administrators' ? 'Administrators' :
                   'Project editor'
                 }}
               </h1>
@@ -872,7 +898,7 @@ interface Inquiry {
               </div>
             </div>
 
-            
+
                         @if (contentLoading) {
               <div class="empty-state">Loading skills...</div>
             } @else if (filteredSkills.length === 0) {
@@ -1791,6 +1817,165 @@ interface Inquiry {
 
   </section>
 }
+          @if (view === 'administrators' && currentAdminRole === 'SUPER_ADMIN') {
+            <section class="administrator-page">
+
+              <div class="administrator-intro">
+                <div>
+                  <h2>Administrator management</h2>
+                  <p>Control who can access the WEBORA administration workspace.</p>
+                </div>
+                <span class="administrator-role-note">SUPER ADMIN ACCESS</span>
+              </div>
+
+              <div class="administrator-layout">
+
+                <form
+                  class="administrator-create-card"
+                  (ngSubmit)="createAdministrator()"
+                >
+                  <div class="administrator-card-heading">
+                    <h3>Create administrator</h3>
+                    <p>New accounts receive standard Admin permissions.</p>
+                  </div>
+
+                  <label for="administratorEmail">Email address</label>
+                  <input
+                    id="administratorEmail"
+                    type="email"
+                    name="administratorEmail"
+                    [(ngModel)]="administratorEmail"
+                    placeholder="admin@example.com"
+                    autocomplete="off"
+                    maxlength="255"
+                    required
+                  />
+
+                  <label for="administratorPassword">Temporary password</label>
+                  <input
+                    id="administratorPassword"
+                    type="password"
+                    name="administratorPassword"
+                    [(ngModel)]="administratorPassword"
+                    placeholder="At least 12 characters"
+                    autocomplete="new-password"
+                    minlength="12"
+                    maxlength="64"
+                    required
+                  />
+
+                  <p class="administrator-help">
+                    Share the password securely with the new administrator.
+                    It will not be displayed again after account creation.
+                  </p>
+
+                  <button
+                    type="submit"
+                    class="administrator-primary-button"
+                    [disabled]="
+                      administratorSaving ||
+                      !administratorEmail.trim() ||
+                      administratorPassword.length < 12 ||
+                      administratorPassword.length > 64
+                    "
+                  >
+                    {{ administratorSaving ? 'Creating...' : 'Create administrator' }}
+                  </button>
+                </form>
+
+                <div class="administrator-list-card">
+                  <div class="administrator-card-heading administrator-list-heading">
+                    <div>
+                      <h3>Administrator accounts</h3>
+                      <p>Review roles and account access status.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="administrator-refresh-button"
+                      (click)="loadAdministrators()"
+                      [disabled]="administratorLoading"
+                    >
+                      {{ administratorLoading ? 'Loading...' : 'Refresh' }}
+                    </button>
+                  </div>
+
+                  @if (administratorLoading) {
+                    <div class="administrator-empty">
+                      Loading administrator accounts...
+                    </div>
+                  } @else if (administrators.length === 0) {
+                    <div class="administrator-empty">
+                      No administrator accounts found.
+                    </div>
+                  } @else {
+                    <div class="administrator-table-wrap">
+                      <table class="administrator-table">
+                        <thead>
+                          <tr>
+                            <th>Account</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (admin of administrators; track admin.id) {
+                            <tr>
+                              <td>
+                                <strong>{{ admin.email }}</strong>
+                                @if (
+                                  admin.email.toLowerCase() ===
+                                  currentAdminEmail.toLowerCase()
+                                ) {
+                                  <small class="administrator-you-label">
+                                    Current account
+                                  </small>
+                                }
+                              </td>
+                              <td>
+                                <span class="administrator-role">
+                                  {{ admin.role }}
+                                </span>
+                              </td>
+                              <td>
+                                <span
+                                  class="administrator-status"
+                                  [class.is-enabled]="admin.enabled"
+                                  [class.is-disabled]="!admin.enabled"
+                                >
+                                  {{ admin.enabled ? 'Active' : 'Disabled' }}
+                                </span>
+                              </td>
+                              <td>{{ admin.createdAt | date:'mediumDate' }}</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  class="administrator-status-button"
+                                  [class.disable-action]="admin.enabled"
+                                  [disabled]="
+                                    admin.enabled &&
+                                    admin.email.toLowerCase() ===
+                                    currentAdminEmail.toLowerCase()
+                                  "
+                                  (click)="toggleAdministratorStatus(admin)"
+                                >
+                                  {{ admin.enabled ? 'Disable' : 'Enable' }}
+                                </button>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+
+              </div>
+            </section>
+          }
+
           <footer class="footer">
             WEBORA CMS · Private administration workspace
           </footer>
@@ -1804,6 +1989,14 @@ export class AppComponent {
   @ViewChild('serviceEditor')
   serviceEditor?: ElementRef<HTMLElement>;
   token = localStorage.getItem('webora_admin_token') || '';
+  currentAdminEmail = '';
+  currentAdminRole = '';
+
+  administrators: Administrator[] = [];
+  administratorEmail = '';
+  administratorPassword = '';
+  administratorLoading = false;
+  administratorSaving = false;
 
   email = '';
   password = '';
@@ -1816,7 +2009,8 @@ export class AppComponent {
   | 'services'
   | 'profile'
   | 'testimonials'
-  | 'inquiries' = 'overview';
+  | 'inquiries'
+  | 'administrators' = 'overview';
 
   mobileMenu = false;
 
@@ -1871,10 +2065,36 @@ testimonialFilter = 'ALL';
   serviceForm: ServiceItem = this.emptyService();
 
   constructor(private http: HttpClient) {
-  if (this.token) {
-    this.loadOverviewData();
+    if (this.token) {
+      this.loadCurrentAdmin();
+      this.loadOverviewData();
+    }
   }
-}
+
+  loadCurrentAdmin(): void {
+    if (!this.token) return;
+
+    this.http.get<AdminProfile>(
+      `${API_URL}/admin/me`,
+      { headers: this.authHeaders() }
+    ).subscribe({
+      next: profile => {
+        this.currentAdminEmail = profile.email || '';
+        this.currentAdminRole = profile.role || '';
+      },
+      error: err => {
+        if (err.status === 401) {
+          this.logout();
+          this.error = 'Your session expired. Please sign in again.';
+        } else {
+          this.error = this.errorMessage(
+            err,
+            'Could not verify administrator access.'
+          );
+        }
+      }
+    });
+  }
 loadOverviewData(): void {
   if (!this.token) return;
 
@@ -2042,6 +2262,7 @@ get repliedInquiriesCount(): number {
 
         this.token = response.accessToken;
         localStorage.setItem('webora_admin_token', this.token);
+        this.loadCurrentAdmin();
         this.password = '';
         this.busy = false;
         this.loadProjects();
@@ -2058,6 +2279,8 @@ get repliedInquiriesCount(): number {
 
   logout(): void {
     this.token = '';
+    this.currentAdminEmail = '';
+    this.currentAdminRole = '';
     localStorage.removeItem('webora_admin_token');
 
     this.projects = [];
@@ -2110,7 +2333,13 @@ get repliedInquiriesCount(): number {
     | 'profile'
     | 'testimonials'
     | 'inquiries'
+    | 'administrators'
 ): void {
+    if (view === 'administrators' && this.currentAdminRole !== 'SUPER_ADMIN') {
+      this.error = 'Only Super Admins can manage administrator accounts.';
+      return;
+    }
+
     this.view = view;
     this.mobileMenu = false;
     this.error = '';
@@ -2142,8 +2371,14 @@ get repliedInquiriesCount(): number {
       this.loadTestimonials();
     }
     if (view === 'inquiries') {
+
       this.selectedInquiryId = '';
+
       this.loadInquiries();
+
+    }
+    if (view === 'administrators') {
+      this.loadAdministrators();
     }
   }
 
@@ -3300,6 +3535,117 @@ deleteInquiry(inquiry: Inquiry): void {
     }
   });
 }
+
+  // ADMINISTRATOR MANAGEMENT
+
+  loadAdministrators(): void {
+    if (this.currentAdminRole !== 'SUPER_ADMIN') {
+      return;
+    }
+
+    this.administratorLoading = true;
+
+    this.http.get<Administrator[]>(
+      `${API_URL}/admin/administrators`,
+      { headers: this.authHeaders() }
+    ).subscribe({
+      next: response => {
+        this.administrators = response || [];
+        this.administratorLoading = false;
+      },
+      error: err => {
+        this.administratorLoading = false;
+
+        if (err.status === 401) {
+          this.logout();
+          this.error = 'Your session expired. Please sign in again.';
+        } else {
+          this.error = this.errorMessage(
+            err,
+            'Could not load administrator accounts.'
+          );
+        }
+      }
+    });
+  }
+
+  createAdministrator(): void {
+    this.error = '';
+    this.success = '';
+
+    const email = this.administratorEmail.trim().toLowerCase();
+    const password = this.administratorPassword;
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.error = 'Enter a valid email address.';
+      return;
+    }
+
+    if (password.length < 12 || password.length > 64) {
+      this.error = 'Password must contain between 12 and 64 characters.';
+      return;
+    }
+
+    this.administratorSaving = true;
+
+    this.http.post<Administrator>(
+      `${API_URL}/admin/administrators`,
+      { email, password },
+      { headers: this.authHeaders() }
+    ).subscribe({
+      next: () => {
+        this.administratorEmail = '';
+        this.administratorPassword = '';
+        this.administratorSaving = false;
+        this.success = 'Administrator account created successfully.';
+        this.loadAdministrators();
+      },
+      error: err => {
+        this.administratorSaving = false;
+        this.error = this.errorMessage(
+          err,
+          'Could not create the administrator account.'
+        );
+      }
+    });
+  }
+
+  toggleAdministratorStatus(admin: Administrator): void {
+    this.error = '';
+    this.success = '';
+
+    const isCurrentAdmin =
+      admin.email.toLowerCase() === this.currentAdminEmail.toLowerCase();
+
+    if (admin.enabled && isCurrentAdmin) {
+      this.error = 'You cannot disable your own account.';
+      return;
+    }
+
+    const nextStatus = !admin.enabled;
+    const action = nextStatus ? 'enable' : 'disable';
+
+    if (!confirm(`Are you sure you want to ${action} ${admin.email}?`)) {
+      return;
+    }
+
+    this.http.patch<Administrator>(
+      `${API_URL}/admin/administrators/${admin.id}/status`,
+      { enabled: nextStatus },
+      { headers: this.authHeaders() }
+    ).subscribe({
+      next: () => {
+        this.success = `Administrator account ${nextStatus ? 'enabled' : 'disabled'} successfully.`;
+        this.loadAdministrators();
+      },
+      error: err => {
+        this.error = this.errorMessage(
+          err,
+          'Could not update administrator status.'
+        );
+      }
+    });
+  }
 
   // SHARED UTILITIES
 

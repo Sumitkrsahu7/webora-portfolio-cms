@@ -72,4 +72,12 @@ public class AdminUser {
     public boolean isEnabled() {
         return enabled;
     }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 }

@@ -9,4 +9,6 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
     Optional<AdminUser> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    long countByRoleAndEnabled(String role, boolean enabled);
 }

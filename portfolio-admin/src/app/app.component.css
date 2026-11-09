@@ -544,3 +544,235 @@
   margin-top: 24px;
   scroll-margin-top: 24px;
 }
+/* Administrator management */
+.administrator-page {
+  display: grid;
+  gap: 22px;
+}
+
+.administrator-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.administrator-intro h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.administrator-intro p,
+.administrator-card-heading p {
+  margin: 0;
+  color: var(--muted, #777);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.administrator-role-note {
+  padding: 7px 11px;
+  border-radius: 20px;
+  background: #f0edff;
+  color: #6045b8;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.administrator-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.administrator-create-card,
+.administrator-list-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--border, #e8e8ed);
+  border-radius: 14px;
+  background: var(--card, #fff);
+}
+
+.administrator-card-heading {
+  margin-bottom: 20px;
+}
+
+.administrator-card-heading h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.administrator-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.administrator-create-card label {
+  display: block;
+  margin: 16px 0 7px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.administrator-create-card input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #dedee5);
+  border-radius: 8px;
+  background: var(--input-bg, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+.administrator-create-card input:focus {
+  outline: 2px solid #b8a8f5;
+  outline-offset: 1px;
+}
+
+.administrator-help {
+  margin: 9px 0 16px;
+  color: var(--muted, #777);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.administrator-primary-button,
+.administrator-refresh-button,
+.administrator-status-button {
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.administrator-primary-button {
+  width: 100%;
+  background: #292044;
+  color: #fff;
+}
+
+.administrator-refresh-button {
+  flex-shrink: 0;
+  background: #f1eff7;
+  color: #40345f;
+}
+
+.administrator-status-button {
+  background: #e8f5ed;
+  color: #237346;
+}
+
+.administrator-status-button.disable-action {
+  background: #fff0ed;
+  color: #b34b3c;
+}
+
+.administrator-primary-button:disabled,
+.administrator-refresh-button:disabled,
+.administrator-status-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.administrator-empty {
+  padding: 32px 12px;
+  color: var(--muted, #777);
+  text-align: center;
+  font-size: 13px;
+}
+
+.administrator-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.administrator-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.administrator-table th {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border, #e8e8ed);
+  color: var(--muted, #777);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.administrator-table td {
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--border, #eeeeF2);
+  vertical-align: middle;
+}
+
+.administrator-table td strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+
+.administrator-you-label {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted, #777);
+  font-size: 10px;
+}
+
+.administrator-role,
+.administrator-status {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.administrator-role {
+  background: #f0edff;
+  color: #6045b8;
+}
+
+.administrator-status.is-enabled {
+  background: #e8f5ed;
+  color: #237346;
+}
+
+.administrator-status.is-disabled {
+  background: #f1f1f3;
+  color: #777;
+}
+
+@media (max-width: 1000px) {
+  .administrator-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .administrator-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .administrator-create-card,
+  .administrator-list-card {
+    padding: 16px;
+  }
+}
