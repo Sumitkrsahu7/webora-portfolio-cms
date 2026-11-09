@@ -1,6 +1,6 @@
-
+﻿
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -66,3 +66,6 @@ management:
   endpoint:
     health:
       show-details: never
+
+
+
