@@ -1,0 +1,51 @@
+﻿# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+.angular/
+**/target/
+**/build/
+
+# Runtime uploads and generated files
+uploads/
+**/uploads/
+*.log
+logs/
+
+# Local databases and backups
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.mdf
+*.ldf
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+*.jar
+*.war
+
+# Temporary files
+*.tmp
+*.temp
+
+docker-compose.yml
+scripts/start-local.ps1
+
+docker-compose.yml
+scripts/start-local.ps1
