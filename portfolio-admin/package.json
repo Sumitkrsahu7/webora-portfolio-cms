@@ -2,7 +2,11 @@
   "name": "portfolio-admin",
   "version": "0.1.0",
   "private": true,
-  "scripts": {"start": "ng serve", "build": "ng build", "test": "ng test"},
+  "scripts": {
+    "start": "ng serve",
+    "build": "ng build --configuration production",
+    "test": "ng test"
+  },
   "dependencies": {
     "@angular/animations": "^20.2.4",
     "@angular/common": "^20.2.4",
