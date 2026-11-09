@@ -2089,7 +2089,7 @@ get repliedInquiriesCount(): number {
       error: err => {
         this.loading = false;
 
-        if (err.status === 401 || err.status === 403) {
+        if (err.status === 401) {
           this.logout();
           this.error =
             'Your session expired or access was denied. Please sign in again.';
@@ -2393,7 +2393,7 @@ get repliedInquiriesCount(): number {
     error: err => {
       this.contentLoading = false;
 
-      if (err.status === 401 || err.status === 403) {
+      if (err.status === 401) {
         this.logout();
         this.error = 'Your session expired or access was denied. Please sign in again.';
       } else {
@@ -2576,7 +2576,7 @@ get repliedInquiriesCount(): number {
     error: err => {
       this.contentLoading = false;
 
-      if (err.status === 401 || err.status === 403) {
+      if (err.status === 401) {
         this.logout();
         this.error = 'Your session expired or access was denied. Please sign in again.';
       } else {
@@ -3236,7 +3236,7 @@ loadInquiries(): void {
     error: err => {
       this.contentLoading = false;
 
-      if (err.status === 401 || err.status === 403) {
+      if (err.status === 401) {
         this.logout();
         this.error = 'Your session expired. Please sign in again.';
       } else {
