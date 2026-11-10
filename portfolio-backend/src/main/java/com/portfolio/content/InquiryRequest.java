@@ -8,5 +8,5 @@ public record InquiryRequest(
     @NotBlank @Size(max = 160) String name,
     @NotBlank @Email @Size(max = 255) String email,
     @Size(max = 255) String subject,
-    @NotBlank String message
+    @NotBlank @Size(max = 10000) String message
 ) {}
