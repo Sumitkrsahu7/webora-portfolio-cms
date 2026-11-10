@@ -1,3 +1,4 @@
+import HeroVisual from '../components/HeroVisual'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -141,7 +142,8 @@ export default function Home() {
       <section className="hero">
         <div className="hero-glow" />
 
-        <div className="hero-content">
+        <div className="hero-grid">
+          <div className="hero-content">
           <div className="hero-label">
             <span className="status-dot" />
             SOFTWARE DEVELOPMENT & DIGITAL SOLUTIONS
@@ -170,6 +172,8 @@ export default function Home() {
             </Link>
           </div>
         </div>
+          <HeroVisual />
+        </div>
 
         <div className="hero-bottom">
           <span>THOUGHTFUL ENGINEERING. PRACTICAL RESULTS.</span>
@@ -197,8 +201,18 @@ export default function Home() {
         </div>
 
         {servicesLoading && (
-          <div className="empty-state">
-            Loading services...
+          <div className="services-grid" aria-busy="true" aria-label="Loading services">
+            {[1, 2, 3, 4].map((i) => (
+              <article className="service-card skeleton-card" key={i}>
+                <div className="service-top">
+                  <div className="skeleton-line skeleton-shimmer" style={{ width: '80px', height: '10px' }} />
+                  <div className="skeleton-icon skeleton-shimmer" style={{ width: '22px', height: '22px' }} />
+                </div>
+                <div className="skeleton-line skeleton-title skeleton-shimmer" style={{ margin: '14px 0' }} />
+                <div className="skeleton-line skeleton-shimmer" />
+                <div className="skeleton-line skeleton-short skeleton-shimmer" />
+              </article>
+            ))}
           </div>
         )}
 

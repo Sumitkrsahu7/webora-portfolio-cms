@@ -1,4 +1,3 @@
-
 import type { Project } from './types'
 
 const API_BASE =
@@ -12,14 +11,82 @@ export function assetUrl(path?: string) {
   return `${API_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`)
+interface CacheEntry<T> {
+  data: T
+  expiresAt: number
+}
 
-  if (!response.ok) {
-    throw new Error(`API request failed (${response.status})`)
+const cache = new Map<string, CacheEntry<unknown>>()
+const inFlightRequests = new Map<string, Promise<unknown>>()
+const DEFAULT_TTL_MS = 60_000 // 60 seconds client-side memory cache
+
+export function clearApiCache(pathPrefix?: string) {
+  if (!pathPrefix) {
+    cache.clear()
+    return
+  }
+  for (const key of cache.keys()) {
+    if (key.startsWith(pathPrefix)) {
+      cache.delete(key)
+    }
+  }
+}
+
+async function request<T>(
+  path: string,
+  options?: { ttlMs?: number; skipCache?: boolean }
+): Promise<T> {
+  const ttlMs = options?.ttlMs ?? DEFAULT_TTL_MS
+  const skipCache = options?.skipCache ?? false
+  const now = Date.now()
+
+  // 1. Return fresh cached data if available (bypassed if skipCache is true)
+  if (!skipCache) {
+    const cached = cache.get(path)
+    if (cached && cached.expiresAt > now) {
+      return cached.data as T
+    }
+
+    // 2. Request deduplication: return existing promise if identical request is in flight
+    const inFlight = inFlightRequests.get(path)
+    if (inFlight) {
+      return inFlight as Promise<T>
+    }
+  } else {
+    // When skipCache is requested, also evict any existing stale cache entry
+    cache.delete(path)
   }
 
-  return response.json() as Promise<T>
+  const fetchPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE}${path}`)
+
+      if (!response.ok) {
+        throw new Error(`API request failed (${response.status})`)
+      }
+
+      const data = (await response.json()) as T
+
+      if (!skipCache && ttlMs > 0) {
+        cache.set(path, {
+          data,
+          expiresAt: Date.now() + ttlMs,
+        })
+      }
+
+      return data
+    } finally {
+      if (!skipCache) {
+        inFlightRequests.delete(path)
+      }
+    }
+  })()
+
+  if (!skipCache) {
+    inFlightRequests.set(path, fetchPromise)
+  }
+
+  return fetchPromise
 }
 
 export interface SiteProfile {
@@ -91,7 +158,6 @@ export const getServices = () =>
 export const getTestimonials = () =>
   request<Testimonial[]>('/public/testimonials')
 
-
 export interface InquiryRequest {
   name: string
   email: string
@@ -124,4 +190,3 @@ export async function submitInquiry(data: InquiryRequest): Promise<void> {
     throw new Error(message)
   }
 }
-

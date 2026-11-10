@@ -3,6 +3,7 @@ package com.portfolio.config;
 import com.portfolio.auth.AdminUserDetailsService;
 import com.portfolio.auth.JwtAuthenticationFilter;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,10 +35,24 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    private static final String CSP_POLICY =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https://res.cloudinary.com; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self'; " +
+        "frame-ancestors 'none'; " +
+        "form-action 'self';";
+
+    private static final String PERMISSIONS_POLICY =
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+
     @Bean
     SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         JwtAuthenticationFilter jwtAuthenticationFilter,
+        PublicCacheFilter publicCacheFilter,
         AuthenticationProvider authenticationProvider
     ) throws Exception {
 
@@ -50,8 +66,15 @@ public class SecurityConfig {
                 .referrerPolicy(referrer -> referrer.policy(
                     ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
                 ))
-                .httpStrictTransportSecurity(hsts ->
-                    hsts.maxAgeInSeconds(31536000)
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .maxAgeInSeconds(31536000)
+                    .includeSubDomains(false)
+                )
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives(CSP_POLICY)
+                )
+                .addHeaderWriter(
+                    new StaticHeadersWriter("Permissions-Policy", PERMISSIONS_POLICY)
                 )
             )
 
@@ -96,6 +119,10 @@ public class SecurityConfig {
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class
             )
+            .addFilterAfter(
+                publicCacheFilter,
+                UsernamePasswordAuthenticationFilter.class
+            )
 
             .build();
     }
@@ -127,31 +154,47 @@ public class SecurityConfig {
     }
 
     @Bean
-CorsConfigurationSource corsConfigurationSource(
-    @Value("${app.cors.frontend-origin}") String frontendOrigin,
-    @Value("${app.cors.admin-origin}") String adminOrigin
-) {
-    CorsConfiguration config = new CorsConfiguration();
+    CorsConfigurationSource corsConfigurationSource(
+        @Value("${app.cors.frontend-origin}") String frontendOrigin,
+        @Value("${app.cors.admin-origin}") String adminOrigin
+    ) {
+        CorsConfiguration config = new CorsConfiguration();
 
-    config.setAllowedOrigins(
-        List.of(frontendOrigin, adminOrigin)
-    );
+        config.setAllowedOrigins(
+            List.of(frontendOrigin, adminOrigin)
+        );
 
-    config.setAllowedMethods(
-        List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-    );
+        config.setAllowedMethods(
+            List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+        );
 
-    config.setAllowedHeaders(
-        List.of("Authorization", "Content-Type")
-    );
+        config.setAllowedHeaders(
+            List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers")
+        );
 
-    config.setAllowCredentials(true);
+        config.setExposedHeaders(
+            List.of("Cache-Control", "Content-Disposition", "Content-Type")
+        );
 
-    UrlBasedCorsConfigurationSource source =
-        new UrlBasedCorsConfigurationSource();
+        config.setAllowCredentials(true);
 
-    source.registerCorsConfiguration("/**", config);
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
 
-    return source;
-}
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
+    @Bean
+    public PublicCacheFilter publicCacheFilter() {
+        return new PublicCacheFilter();
+    }
+
+    @Bean
+    public FilterRegistrationBean<PublicCacheFilter> publicCacheFilterRegistration(PublicCacheFilter filter) {
+        FilterRegistrationBean<PublicCacheFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
 }

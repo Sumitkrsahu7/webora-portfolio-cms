@@ -160,7 +160,16 @@ export function Services() {
       />
 
       {loading && (
-        <div className="empty-state">Loading services...</div>
+        <div className="static-card-grid" aria-busy="true" aria-label="Loading services">
+          {[1, 2, 3, 4].map((i) => (
+            <article className="static-card skeleton-card" key={i}>
+              <div className="skeleton-icon skeleton-shimmer" />
+              <div className="skeleton-line skeleton-title skeleton-shimmer" />
+              <div className="skeleton-line skeleton-shimmer" />
+              <div className="skeleton-line skeleton-short skeleton-shimmer" />
+            </article>
+          ))}
+        </div>
       )}
 
       {error && (
@@ -549,13 +558,13 @@ export function Contact() {
           </div>
 
           {success && (
-            <div className="contact-feedback success" role="status">
+            <div className="contact-feedback success" role="status" aria-live="polite">
               {success}
             </div>
           )}
 
           {error && (
-            <div className="contact-feedback error" role="alert">
+            <div className="contact-feedback error" role="alert" aria-live="polite">
               {error}
             </div>
           )}

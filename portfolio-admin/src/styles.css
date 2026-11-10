@@ -167,15 +167,17 @@ select option { background: #17151e; }
   display: none;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   margin-left: auto;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: #fff;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -215,6 +217,7 @@ select option { background: #17151e; }
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-height: 44px;
   margin: 2px 0;
   padding: 12px 11px;
   color: #aaa6b4;
@@ -446,7 +449,16 @@ td { padding: 14px 15px; color: #b8b3c1; border-top: 1px solid var(--border); fo
 .check-field input { accent-color: #a18cff; width: 16px; height: 16px; }
 
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 5px 0 20px; }
-.empty-state { padding: 35px 20px; color: #928d9d; background: var(--panel); border: 1px solid var(--border); text-align: center; font-size: 11px; }
+.empty-state {
+  padding: 42px 24px;
+  color: #a49fb2;
+  background: var(--panel);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .alert { margin: 14px 0; padding: 12px 14px; border: 1px solid; font-size: 11px; }
 .alert.error { color: #f0a0a5; background: #9d30301c; border-color: #c4545466; }
 .alert.success { color: #9ed9b1; background: #30834a1c; border-color: #4baf6b66; }
@@ -572,6 +584,24 @@ select:focus-visible {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.table-wrap::-webkit-scrollbar,
+.project-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrap::-webkit-scrollbar-track,
+.project-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-wrap::-webkit-scrollbar-thumb,
+.project-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
 }
 
 .table-wrap table {
@@ -686,9 +716,11 @@ select:focus-visible {
   .mobile-menu {
     display: inline-grid;
     place-items: center;
-    flex: 0 0 40px;
-    width: 40px;
-    height: 40px;
+    flex: 0 0 44px;
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border-radius: 8px;
     font-size: 19px;

@@ -15,12 +15,23 @@
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "polyfills": ["zone.js"],
-            "styles": ["src/styles.css"]
+            "polyfills": [
+              "zone.js"
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "production": {
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": false
+              },
               "outputHashing": "all",
               "fileReplacements": [
                 {
@@ -39,8 +50,12 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": {"buildTarget": "portfolio-admin:build:production"},
-            "development": {"buildTarget": "portfolio-admin:build:development"}
+            "production": {
+              "buildTarget": "portfolio-admin:build:production"
+            },
+            "development": {
+              "buildTarget": "portfolio-admin:build:development"
+            }
           },
           "defaultConfiguration": "development"
         }

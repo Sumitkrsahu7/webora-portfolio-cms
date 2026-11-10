@@ -77,19 +77,31 @@ This document tracks the implementation progress, production readiness, and futu
 - [ ] Custom domain configuration
 - [ ] HTTPS configuration
 
-## Milestone 7 — Future Enhancements
+## Milestone 7 — Security, Performance & UI Enhancements
 
-- [ ] Automated backend integration tests
-- [ ] React component tests
-- [ ] Angular component tests
-- [ ] SEO metadata and sitemap
-- [ ] Advanced dashboard analytics
-- [ ] Activity logs
-- [ ] Improved inquiry notifications
-- [ ] Performance optimization
-- [ ] Image optimization and caching
-- [ ] Additional security improvements
+- [x] Backend HTTP security headers (CSP, Permissions-Policy, HSTS preload, X-Content-Type-Options, X-Frame-Options)
+- [x] Backend request limits (Tomcat POST/swallow size limits and multipart limits)
+- [x] Centralized REST error handling via `@RestControllerAdvice` (sanitized 413, 400, 404, 500 payloads)
+- [x] API response caching & deduplication (In-memory 60s cache in React `api.ts` + `PublicCacheFilter`)
+- [x] Skeleton shimmer loading states (instant visual feedback on Services, Home, and Projects)
+- [x] Bug fix: Duplicate project description on project detail page resolved at source
+- [x] Developer-focused Hero visual (Pure SVG/CSS Architecture Terminal with live telemetry, zero human portraits)
+- [x] Project image bounding & aspect ratios (Constrained `.detail-image`, `.detail-gallery`, and `.project-image`)
+- [x] Typography and spacing normalization (`hero h1` and `page-title` clamping, consistent section padding)
+- [x] Responsive navigation & drawer usability (React hamburger toggle fix, admin backdrop & Escape handling)
+- [x] Cross-device responsive tuning across all 9 viewports (320px to 1920px)
+- [x] WCAG 2.2 accessibility improvements (:focus-visible high-contrast rings, 44px min touch targets, ARIA live regions)
+- [x] Angular Admin UI polish (styled horizontal scrollbars for tables, refined empty states, offline production bundling)
+
+## Milestone 8 — Future Enhancements
+
+- [ ] Automated end-to-end integration tests
+- [ ] React component unit tests
+- [ ] Angular component unit tests
+- [ ] SEO metadata and sitemap generation
+- [ ] Advanced dashboard analytics & activity logs
+- [ ] Inquiry email notifications
 
 ---
 
-**Current Status:** Core portfolio CMS implemented and verified locally. GitHub publication and production deployment are the next priorities.
+**Current Status:** All core services (Frontend, Admin, Backend, Database) verified and operational. Backend unit tests pass 32/32 (`BUILD SUCCESS`). Frontend and Angular Admin bundles build cleanly with zero errors. All security hardening, caching, accessibility, responsive, and UI enhancements complete.

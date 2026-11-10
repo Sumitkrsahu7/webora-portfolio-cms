@@ -25,38 +25,54 @@ export default function Projects() {
         A collection of projects and digital solutions published by Webora.
       </p>
 
-      {loading && <div className="empty-state">Loading projects...</div>}
+      {loading && (
+        <div className="project-grid page-project-grid" aria-busy="true" aria-label="Loading projects">
+          {[1, 2, 3, 4].map((i) => (
+            <article className="project-card skeleton-project-card" key={i}>
+              <div className="project-image skeleton-shimmer" />
+              <div className="project-meta">
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '60px', height: '10px' }} />
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '80px', height: '10px' }} />
+              </div>
+              <div className="skeleton-line skeleton-title skeleton-shimmer" style={{ height: '24px' }} />
+              <div className="skeleton-line skeleton-shimmer" />
+            </article>
+          ))}
+        </div>
+      )}
       {error && <div className="empty-state error-state">{error}</div>}
       {!loading && !error && projects.length === 0 && (
         <div className="empty-state">No published projects are available yet.</div>
       )}
 
-      <div className="project-grid page-project-grid">
-        {projects.map((project) => (
-          <article className="project-card" key={project.id}>
-            <Link className="project-image" to={`/projects/${project.slug}`}>
-              {project.thumbnailUrl ? (
-                <img src={assetUrl(project.thumbnailUrl)} alt={project.title} />
-              ) : (
-                <div className="image-placeholder">
-                  <Layers3 size={38} />
-                  <span>PROJECT PREVIEW</span>
-                </div>
-              )}
-              <span className="image-arrow"><ArrowUpRight size={19} /></span>
-            </Link>
-            <div className="project-meta">
-              <span>{project.category || 'PROJECT'}</span>
-              <span>{project.featured ? 'FEATURED' : 'SELECTED WORK'}</span>
-            </div>
-            <h3><Link to={`/projects/${project.slug}`}>{project.title}</Link></h3>
-            <p>{project.shortDescription}</p>
-            <div className="tags">
-              {project.technologies?.map((tag) => <span key={tag}>{tag}</span>)}
-            </div>
-          </article>
-        ))}
-      </div>
+      {!loading && !error && projects.length > 0 && (
+        <div className="project-grid page-project-grid">
+          {projects.map((project) => (
+            <article className="project-card" key={project.id}>
+              <Link className="project-image" to={`/projects/${project.slug}`}>
+                {project.thumbnailUrl ? (
+                  <img src={assetUrl(project.thumbnailUrl)} alt={project.title} />
+                ) : (
+                  <div className="image-placeholder">
+                    <Layers3 size={38} />
+                    <span>PROJECT PREVIEW</span>
+                  </div>
+                )}
+                <span className="image-arrow"><ArrowUpRight size={19} /></span>
+              </Link>
+              <div className="project-meta">
+                <span>{project.category || 'PROJECT'}</span>
+                <span>{project.featured ? 'FEATURED' : 'SELECTED WORK'}</span>
+              </div>
+              <h3><Link to={`/projects/${project.slug}`}>{project.title}</Link></h3>
+              <p>{project.shortDescription}</p>
+              <div className="tags">
+                {project.technologies?.map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Github, Globe } from 'lucide-react'
+import { ArrowLeft, Github, Globe } from 'lucide-react'
 import { getProject, assetUrl } from '../api'
 import type { Project } from '../types'
 
@@ -30,12 +29,30 @@ export default function ProjectDetail() {
     )
   }
 
+  const shortDesc = project.shortDescription?.trim() || ''
+  const fullDesc = project.fullDescription?.trim() || ''
+  const hasDistinctFullDescription = Boolean(
+    fullDesc &&
+    fullDesc.toLowerCase() !== shortDesc.toLowerCase()
+  )
+
+  const isSafeExternalUrl = (url?: string | null): boolean => {
+    if (!url) return false
+    const trimmed = url.trim()
+    return (
+      (trimmed.startsWith('https://') || trimmed.startsWith('http://')) &&
+      !trimmed.includes('example.com') &&
+      !trimmed.includes('example.org') &&
+      !trimmed.includes('github.com/example')
+    )
+  }
+
   return (
     <article className="detail">
       <Link className="back-link" to="/projects"><ArrowLeft size={15} /> All projects</Link>
       <p className="eyebrow">{project.category || 'PROJECT'}</p>
       <h1>{project.title}</h1>
-      <p className="detail-intro">{project.shortDescription}</p>
+      {shortDesc && <p className="detail-intro">{shortDesc}</p>}
 
       {project.thumbnailUrl && (
         <img className="detail-image" src={assetUrl(project.thumbnailUrl)} alt={project.title} />
@@ -43,7 +60,12 @@ export default function ProjectDetail() {
 
       <div className="detail-body">
         <div>
-          <p>{project.fullDescription || project.shortDescription}</p>
+          {hasDistinctFullDescription && (
+            <p className="detail-full-description">{fullDesc}</p>
+          )}
+          {!shortDesc && fullDesc && !hasDistinctFullDescription && (
+            <p className="detail-intro">{fullDesc}</p>
+          )}
 
           {project.images && project.images.length > 0 && (
             <div className="detail-gallery">
@@ -52,6 +74,7 @@ export default function ProjectDetail() {
                   key={image.id}
                   src={assetUrl(image.imageUrl)}
                   alt={image.altText || project.title}
+                  loading="lazy"
                 />
               ))}
             </div>
@@ -67,14 +90,25 @@ export default function ProjectDetail() {
           </div>
 
           <div className="detail-links">
-            {project.liveUrl && !project.liveUrl.includes('example.com') && (
-              <a href={project.liveUrl} target="_blank" rel="noreferrer">
-                <Globe size={15} /> Live project <ArrowUpRight size={13} />
+            {isSafeExternalUrl(project.liveUrl) && (
+              <a
+                className="button primary"
+                href={project.liveUrl!.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Globe size={16} /> Live application
               </a>
             )}
-            {project.githubUrl && !project.githubUrl.includes('github.com/example') && (
-              <a href={project.githubUrl} target="_blank" rel="noreferrer">
-                <Github size={15} /> Source code <ArrowUpRight size={13} />
+
+            {isSafeExternalUrl(project.githubUrl) && (
+              <a
+                className="button secondary"
+                href={project.githubUrl!.trim()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github size={16} /> Source repository
               </a>
             )}
           </div>

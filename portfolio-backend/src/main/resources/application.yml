@@ -1,6 +1,8 @@
-
 server:
   port: ${PORT:8080}
+  tomcat:
+    max-http-form-post-size: 2MB
+    max-swallow-size: 7MB
 
 spring:
   servlet:
@@ -70,6 +72,3 @@ management:
   endpoint:
     health:
       show-details: never
-
-
-
