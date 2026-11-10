@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { ArrowUpRight, Menu, X } from 'lucide-react'
 
@@ -18,6 +18,35 @@ export default function SiteLayout({
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Close the mobile navigation when Escape is pressed.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && menuOpen) {
+        setMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOpen])
+
+  // Prevent background scrolling while the mobile menu is open.
+  // Restore the previous overflow value when the menu closes.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [menuOpen])
+
   return (
     <>
       <header className="topbar">
@@ -25,7 +54,10 @@ export default function SiteLayout({
           webora<span>.</span>
         </Link>
 
-        <nav className={`main-nav ${menuOpen ? 'nav-open' : ''}`}>
+        <nav
+          id="primary-navigation"
+          className={`main-nav ${menuOpen ? 'nav-open' : ''}`}
+        >
           {navigation.map((item) => (
             <NavLink
               key={item.path}
@@ -36,6 +68,7 @@ export default function SiteLayout({
               {item.label}
             </NavLink>
           ))}
+
           <Link
             className="mobile-contact"
             to="/contact"
@@ -50,13 +83,22 @@ export default function SiteLayout({
         </Link>
 
         <button
+          type="button"
           className="menu-toggle"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          onClick={() => setMenuOpen(!menuOpen)}
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setMenuOpen((previous) => !previous)}
         >
           {menuOpen ? <X /> : <Menu />}
         </button>
       </header>
+
+      <div
+        className={`nav-backdrop ${menuOpen ? 'nav-backdrop-visible' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
 
       <main>{children}</main>
 
@@ -64,12 +106,15 @@ export default function SiteLayout({
         <Link className="footer-brand" to="/">
           webora<span>.</span>
         </Link>
+
         <span>Digital experiences, thoughtfully built.</span>
+
         <div className="footer-links">
           <Link to="/profile">Profile</Link>
           <Link to="/testimonials">Testimonials</Link>
           <Link to="/contact">Contact</Link>
         </div>
+
         <span>© {new Date().getFullYear()} Webora</span>
       </footer>
     </>

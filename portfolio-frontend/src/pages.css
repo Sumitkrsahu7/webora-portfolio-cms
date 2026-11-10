@@ -198,48 +198,6 @@
     font-size: 10px;
   }
 
-  .menu-toggle {
-    display: grid;
-    place-items: center;
-    padding: 7px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text);
-  }
-
-  .header-cta {
-    display: none;
-  }
-
-  .main-nav {
-    position: absolute;
-    top: 72px;
-    right: 0;
-    left: 0;
-    display: none;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0;
-    padding: 12px 6% 22px;
-    border-bottom: 1px solid var(--border);
-    background: #0c0b11;
-  }
-
-  .main-nav.nav-open {
-    display: flex;
-  }
-
-  .main-nav a {
-    padding: 13px 0;
-    font-size: 13px;
-  }
-
-  .mobile-contact {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--accent-light) !important;
-  }
 }
 
 

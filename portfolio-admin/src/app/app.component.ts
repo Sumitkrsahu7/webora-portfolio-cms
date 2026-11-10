@@ -1,7 +1,7 @@
 import { environment } from '../environments/environment';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 const API_URL = environment.apiUrl;
@@ -160,15 +160,35 @@ interface Administrator {
       </div>
     } @else {
       <div class="app-shell">
-        <aside class="sidebar" [class.mobile-open]="mobileMenu">
-          <a
-            class="brand"
-            href="#"
-            (click)="navigate('overview'); $event.preventDefault()"
-          >
-            WEBORA<span>.</span>
-            <small>ADMIN WORKSPACE</small>
-          </a>
+        <div
+          class="sidebar-backdrop"
+          [class.active]="mobileMenu"
+          (click)="mobileMenu = false"
+          aria-hidden="true"
+        ></div>
+        <aside
+          id="admin-sidebar"
+          class="sidebar"
+          [class.mobile-open]="mobileMenu"
+        >
+          <div class="sidebar-header">
+            <a
+              class="brand"
+              href="#"
+              (click)="navigate('overview'); $event.preventDefault()"
+            >
+              WEBORA<span>.</span>
+              <small>ADMIN WORKSPACE</small>
+            </a>
+            <button
+              type="button"
+              class="sidebar-close"
+              aria-label="Close navigation sidebar"
+              (click)="mobileMenu = false"
+            >
+              ✕
+            </button>
+          </div>
 
           <p class="nav-label">WORKSPACE</p>
 
@@ -261,7 +281,11 @@ interface Administrator {
         <main class="main-content">
           <header class="topbar">
             <button
+              type="button"
               class="mobile-menu"
+              aria-label="Toggle navigation menu"
+              [attr.aria-expanded]="mobileMenu"
+              aria-controls="admin-sidebar"
               (click)="mobileMenu = !mobileMenu"
             >
               ☰
@@ -2013,6 +2037,13 @@ export class AppComponent {
   | 'administrators' = 'overview';
 
   mobileMenu = false;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.mobileMenu) {
+      this.mobileMenu = false;
+    }
+  }
 
   projects: Project[] = [];
   skills: Skill[] = [];
