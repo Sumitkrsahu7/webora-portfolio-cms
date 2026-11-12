@@ -2,13 +2,17 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { assetUrl, getProfile, prefetchRouteData, subscribeApiCache, type SiteProfile } from '../api'
+import { useRouteSeo } from '../hooks/useRouteSeo'
+import CommandPalette from './CommandPalette'
 
 const navigation = [
   { label: 'Home', path: '/' },
-  { label: 'About', path: '/about' },
   { label: 'Services', path: '/services' },
-  { label: 'Our work', path: '/projects' },
-  { label: 'Skills', path: '/skills' },
+  { label: 'Our Work', path: '/our-work' },
+  { label: 'About Us', path: '/about' },
+  { label: 'Pricing', path: '/pricing' },
+  { label: 'Contact', path: '/contact' },
 ]
 
 export default function SiteLayout({
@@ -16,7 +20,27 @@ export default function SiteLayout({
 }: {
   children: React.ReactNode
 }) {
+  useRouteSeo()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<SiteProfile | null>(null)
+
+  useEffect(() => {
+    let active = true
+    getProfile()
+      .then((data) => {
+        if (active) setProfile(data)
+      })
+      .catch(() => {})
+
+    const unsub = subscribeApiCache<SiteProfile>('/public/profile', (data) => {
+      if (active) setProfile(data)
+    })
+
+    return () => {
+      active = false
+      unsub()
+    }
+  }, [])
 
   // Close the mobile navigation when Escape is pressed.
   useEffect(() => {
@@ -51,7 +75,16 @@ export default function SiteLayout({
     <>
       <header className="topbar">
         <Link className="brand" to="/" onClick={() => setMenuOpen(false)}>
-          webora<span>.</span>
+          {profile?.logoUrl ? (
+            <img
+              src={assetUrl(profile.logoUrl, 200)}
+              alt="WEBORA"
+              className="brand-logo"
+              style={{ height: '26px', width: 'auto', objectFit: 'contain' }}
+            />
+          ) : (
+            <>webora<span>.</span></>
+          )}
         </Link>
 
         <nav
@@ -64,6 +97,7 @@ export default function SiteLayout({
               to={item.path}
               end={item.path === '/'}
               onClick={() => setMenuOpen(false)}
+              onPointerEnter={() => prefetchRouteData(item.path)}
             >
               {item.label}
             </NavLink>
@@ -71,16 +105,23 @@ export default function SiteLayout({
 
           <Link
             className="mobile-contact"
-            to="/contact"
+            to="/request-quote"
             onClick={() => setMenuOpen(false)}
           >
-            Start a project <ArrowUpRight size={15} />
+            Request a Quote <ArrowUpRight size={15} />
           </Link>
         </nav>
 
-        <Link className="header-cta" to="/contact">
-          Start a project <ArrowUpRight size={15} />
-        </Link>
+        <div className="header-actions">
+          <CommandPalette />
+          <Link
+            className="header-cta"
+            to="/request-quote"
+            onPointerEnter={() => prefetchRouteData('/request-quote')}
+          >
+            Request a Quote <ArrowUpRight size={15} />
+          </Link>
+        </div>
 
         <button
           type="button"
@@ -107,15 +148,18 @@ export default function SiteLayout({
           webora<span>.</span>
         </Link>
 
-        <span>Digital experiences, thoughtfully built.</span>
+        <span>{profile?.footerTagline || 'Digital experiences, thoughtfully built.'}</span>
 
         <div className="footer-links">
-          <Link to="/profile">Profile</Link>
-          <Link to="/testimonials">Testimonials</Link>
+          <Link to="/services" onPointerEnter={() => prefetchRouteData('/services')}>Services</Link>
+          <Link to="/our-work" onPointerEnter={() => prefetchRouteData('/our-work')}>Our Work</Link>
+          <Link to="/about" onPointerEnter={() => prefetchRouteData('/about')}>About Us</Link>
+          <Link to="/pricing" onPointerEnter={() => prefetchRouteData('/pricing')}>Pricing</Link>
+          <Link to="/request-quote" onPointerEnter={() => prefetchRouteData('/request-quote')}>Request a Quote</Link>
           <Link to="/contact">Contact</Link>
         </div>
 
-        <span>© {new Date().getFullYear()} Webora</span>
+        <span>© {new Date().getFullYear()} {profile?.name || 'Webora'}</span>
       </footer>
     </>
   )

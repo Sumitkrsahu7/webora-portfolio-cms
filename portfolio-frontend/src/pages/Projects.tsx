@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Layers3 } from 'lucide-react'
-import { getProjects, assetUrl } from '../api'
+import { getProjects, assetUrl, prefetchProject, subscribeApiCache } from '../api'
 import type { Project } from '../types'
 
 export default function Projects() {
@@ -11,10 +11,26 @@ export default function Projects() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let active = true
     getProjects()
-      .then((data) => setProjects(data.filter((p) => p.status === 'PUBLISHED')))
-      .catch(() => setError('Unable to load projects. Please try again later.'))
-      .finally(() => setLoading(false))
+      .then((data) => {
+        if (active) setProjects(data.filter((p) => p.status === 'PUBLISHED'))
+      })
+      .catch(() => {
+        if (active) setError('Unable to load projects. Please try again later.')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    const unsubscribe = subscribeApiCache<Project[]>('/public/projects', (data) => {
+      if (active) setProjects(data.filter((p) => p.status === 'PUBLISHED'))
+    })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
   }, [])
 
   return (
@@ -49,9 +65,14 @@ export default function Projects() {
         <div className="project-grid page-project-grid">
           {projects.map((project) => (
             <article className="project-card" key={project.id}>
-              <Link className="project-image" to={`/projects/${project.slug}`}>
+              <Link
+                className="project-image"
+                to={`/projects/${project.slug}`}
+                onPointerEnter={() => prefetchProject(project.slug)}
+                onFocus={() => prefetchProject(project.slug)}
+              >
                 {project.thumbnailUrl ? (
-                  <img src={assetUrl(project.thumbnailUrl)} alt={project.title} />
+                  <img src={assetUrl(project.thumbnailUrl, 800)} alt={project.title} loading="lazy" />
                 ) : (
                   <div className="image-placeholder">
                     <Layers3 size={38} />

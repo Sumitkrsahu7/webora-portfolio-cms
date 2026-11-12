@@ -1,11 +1,13 @@
 package com.portfolio.auth;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
 
@@ -15,15 +17,27 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final LoginAttemptService loginAttemptService;
+    private final AdminUserRepository adminUserRepository;
 
     public AuthService(
         AuthenticationManager authenticationManager,
         JwtService jwtService,
         LoginAttemptService loginAttemptService
     ) {
+        this(authenticationManager, jwtService, loginAttemptService, null);
+    }
+
+    @Autowired
+    public AuthService(
+        AuthenticationManager authenticationManager,
+        JwtService jwtService,
+        LoginAttemptService loginAttemptService,
+        AdminUserRepository adminUserRepository
+    ) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.loginAttemptService = loginAttemptService;
+        this.adminUserRepository = adminUserRepository;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -73,5 +87,20 @@ public class AuthService {
                     .replace("ROLE_", "")
             )
         );
+    }
+
+    /**
+     * Invalidate all currently issued JWTs for the signed-in administrator by incrementing token_version.
+     */
+    @Transactional
+    public void logout(String email) {
+        if (adminUserRepository == null || email == null || email.isBlank()) {
+            return;
+        }
+        adminUserRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT))
+            .ifPresent(admin -> {
+                admin.incrementTokenVersion();
+                adminUserRepository.save(admin);
+            });
     }
 }

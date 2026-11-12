@@ -5,14 +5,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 
 /**
  * Filter that applies HTTP Cache-Control headers to successful public GET endpoints.
- * Only HTTP 2xx responses under /api/public/ (excluding /api/public/uploads/) receive
- * the public cache header. Error responses (4xx, 5xx), non-GET methods, and non-public
- * endpoints remain un-cached or preserve their own controller-level caching.
+ * Buffers eligible non-upload /api/public/** GET responses before committing so
+ * Cache-Control headers are applied prior to response commit/flush.
  */
 public class PublicCacheFilter extends OncePerRequestFilter {
 
@@ -26,24 +26,34 @@ public class PublicCacheFilter extends OncePerRequestFilter {
         FilterChain filterChain
     ) throws ServletException, IOException {
 
-        filterChain.doFilter(request, response);
-
-        if (response.isCommitted()) {
-            return;
-        }
-
-        int status = response.getStatus();
         String path = request.getRequestURI();
-
-        if (status >= 200 && status < 300 &&
+        boolean eligibleForCaching =
             "GET".equalsIgnoreCase(request.getMethod()) &&
             path != null &&
             path.startsWith("/api/public/") &&
-            !path.startsWith("/api/public/uploads/")) {
+            !path.startsWith("/api/public/uploads/");
 
-            response.setHeader("Cache-Control", PUBLIC_CACHE_HEADER);
-            response.setHeader("Pragma", "");
-            response.setHeader("Expires", "");
+        if (!eligibleForCaching) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        ContentCachingResponseWrapper wrappedResponse =
+            response instanceof ContentCachingResponseWrapper existing
+                ? existing
+                : new ContentCachingResponseWrapper(response);
+
+        try {
+            filterChain.doFilter(request, wrappedResponse);
+
+            int status = wrappedResponse.getStatus();
+            if (status >= 200 && status < 300) {
+                wrappedResponse.setHeader("Cache-Control", PUBLIC_CACHE_HEADER);
+                wrappedResponse.setHeader("Pragma", "");
+                wrappedResponse.setHeader("Expires", "");
+            }
+        } finally {
+            wrappedResponse.copyBodyToResponse();
         }
     }
 }

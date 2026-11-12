@@ -1,6 +1,5 @@
 package com.portfolio.config;
 
-import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,18 +34,32 @@ class PublicCacheFilterTest {
     }
 
     @Test
+    void shouldSetCacheHeaderEvenWhenControllerWritesAndFlushesBody() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/public/projects");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, (req, res) -> {
+            res.setContentType("application/json");
+            res.getWriter().write("[{\"title\":\"Webora\"}]");
+            res.flushBuffer();
+        });
+
+        assertEquals(
+            "public, max-age=60, stale-while-revalidate=300",
+            response.getHeader("Cache-Control")
+        );
+        assertEquals("[{\"title\":\"Webora\"}]", response.getContentAsString());
+    }
+
+    @Test
     void shouldNotSetCacheHeaderFor404NotFound() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/public/projects/non-existent-slug");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilterInternal(request, response, (req, res) -> {
-            ((MockHttpServletResponse) res).setStatus(404);
+            ((jakarta.servlet.http.HttpServletResponse) res).setStatus(404);
         });
 
-        assertNotEquals(
-            "public, max-age=60, stale-while-revalidate=300",
-            response.getHeader("Cache-Control")
-        );
         assertNull(response.getHeader("Cache-Control"));
     }
 
@@ -56,25 +69,25 @@ class PublicCacheFilterTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilterInternal(request, response, (req, res) -> {
-            ((MockHttpServletResponse) res).setStatus(500);
+            ((jakarta.servlet.http.HttpServletResponse) res).setStatus(500);
         });
 
-        assertNotEquals(
-            "public, max-age=60, stale-while-revalidate=300",
-            response.getHeader("Cache-Control")
-        );
         assertNull(response.getHeader("Cache-Control"));
     }
 
     @Test
-    void shouldNotSetCacheHeaderForNonPublicEndpoints() throws ServletException, IOException {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/admin/services");
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        response.setStatus(200);
+    void shouldNotSetCacheHeaderForNonPublicOrAuthEndpoints() throws ServletException, IOException {
+        MockHttpServletRequest adminReq = new MockHttpServletRequest("GET", "/api/admin/services");
+        MockHttpServletResponse adminRes = new MockHttpServletResponse();
+        adminRes.setStatus(200);
+        filter.doFilterInternal(adminReq, adminRes, (req, res) -> {});
+        assertNull(adminRes.getHeader("Cache-Control"));
 
-        filter.doFilterInternal(request, response, (req, res) -> {});
-
-        assertNull(response.getHeader("Cache-Control"));
+        MockHttpServletRequest authReq = new MockHttpServletRequest("GET", "/api/auth/logout");
+        MockHttpServletResponse authRes = new MockHttpServletResponse();
+        authRes.setStatus(200);
+        filter.doFilterInternal(authReq, authRes, (req, res) -> {});
+        assertNull(authRes.getHeader("Cache-Control"));
     }
 
     @Test
@@ -86,7 +99,6 @@ class PublicCacheFilterTest {
 
         filter.doFilterInternal(request, response, (req, res) -> {});
 
-        // Must retain its own 7-day upload cache header and not be overwritten
         assertEquals("max-age=604800, public", response.getHeader("Cache-Control"));
     }
 

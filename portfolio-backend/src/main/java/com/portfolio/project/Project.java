@@ -2,6 +2,7 @@
 package com.portfolio.project;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "projects")
+@BatchSize(size = 25)
 public class Project {
 
     @Id
@@ -60,6 +62,7 @@ public class Project {
         joinColumns = @JoinColumn(name = "project_id")
     )
     @Column(name = "technology", nullable = false, length = 255)
+    @BatchSize(size = 25)
     private Set<String> technologies = new LinkedHashSet<>();
 
     @OneToMany(
@@ -68,6 +71,7 @@ public class Project {
         orphanRemoval = true
     )
     @OrderBy("displayOrder ASC")
+    @BatchSize(size = 25)
     private List<ProjectImage> images = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)

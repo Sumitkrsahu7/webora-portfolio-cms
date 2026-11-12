@@ -110,6 +110,7 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/actuator/health/**"
                 ).permitAll()
+                .requestMatchers("/api/auth/logout").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/api/admin/administrators/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().denyAll()

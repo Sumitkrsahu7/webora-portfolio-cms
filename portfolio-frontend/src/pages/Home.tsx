@@ -1,4 +1,6 @@
 import HeroVisual from '../components/HeroVisual'
+import ProcessSection from '../components/ProcessSection'
+import FaqSection from '../components/FaqSection'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -26,6 +28,9 @@ import {
   getProfile,
   getServices,
   assetUrl,
+  prefetchProject,
+  prefetchRouteData,
+  subscribeApiCache,
 } from '../api'
 
 import type { Project } from '../types'
@@ -128,8 +133,27 @@ export default function Home() {
         if (active) setProfile(null)
       })
 
+    const unsubProjects = subscribeApiCache<Project[]>('/public/projects', (data) => {
+      if (active) setProjects(data)
+    })
+    const unsubServices = subscribeApiCache<ServiceItem[]>('/public/services', (data) => {
+      if (active) {
+        setServices(
+          data
+            .filter((service) => service.published)
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+        )
+      }
+    })
+    const unsubProfile = subscribeApiCache<SiteProfile>('/public/profile', (data) => {
+      if (active) setProfile(data)
+    })
+
     return () => {
       active = false
+      unsubProjects()
+      unsubServices()
+      unsubProfile()
     }
   }, [])
 
@@ -158,17 +182,27 @@ export default function Home() {
           </h1>
 
           <p className="hero-copy">
-            Webora creates practical digital experiences and software
-            solutions that help businesses work better, grow and adapt.
+            {profile?.companyTagline ||
+              'Webora builds reliable websites, e-commerce platforms, and custom web applications designed to help businesses scale.'}
           </p>
 
           <div className="hero-actions">
-            <Link className="button primary" to="/projects">
-              Explore our work <ArrowUpRight size={16} />
+            <Link
+              className="button primary"
+              to="/request-quote"
+              onPointerEnter={() => prefetchRouteData('/request-quote')}
+              onFocus={() => prefetchRouteData('/request-quote')}
+            >
+              Request a Quote <ArrowUpRight size={16} />
             </Link>
 
-            <Link className="button secondary" to="/contact">
-              Let's talk <ArrowRight size={16} />
+            <Link
+              className="button secondary"
+              to="/our-work"
+              onPointerEnter={() => prefetchRouteData('/our-work')}
+              onFocus={() => prefetchRouteData('/our-work')}
+            >
+              Explore Our Work <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -246,9 +280,13 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <h3>{service.title}</h3>
+                    <h3>
+                      <Link to={`/services/${service.slug || service.id}`}>
+                        {service.title}
+                      </Link>
+                    </h3>
 
-                    <p>{service.description}</p>
+                    <p>{service.shortDescription || service.description}</p>
                   </article>
                 )
               })}
@@ -277,7 +315,19 @@ export default function Home() {
         </div>
 
         {loading && (
-          <div className="empty-state">Loading projects...</div>
+          <div className="project-grid" aria-busy="true" aria-label="Loading featured projects">
+            {[1, 2].map((i) => (
+              <article className="project-card skeleton-project-card" key={i}>
+                <div className="project-image skeleton-shimmer" />
+                <div className="project-meta">
+                  <div className="skeleton-line skeleton-shimmer" style={{ width: '60px', height: '10px' }} />
+                  <div className="skeleton-line skeleton-shimmer" style={{ width: '80px', height: '10px' }} />
+                </div>
+                <div className="skeleton-line skeleton-title skeleton-shimmer" style={{ height: '24px' }} />
+                <div className="skeleton-line skeleton-shimmer" />
+              </article>
+            ))}
+          </div>
         )}
 
         {error && (
@@ -290,53 +340,58 @@ export default function Home() {
           </div>
         )}
 
-        <div className="project-grid">
-          {featured.map((project) => (
-            <article className="project-card" key={project.id}>
-              <Link
-                className="project-image"
-                to={`/projects/${project.slug}`}
-              >
-                {project.thumbnailUrl ? (
-                  <img
-                    src={assetUrl(project.thumbnailUrl)}
-                    alt={project.title}
-                  />
-                ) : (
-                  <div className="image-placeholder">
-                    <Layers3 size={38} />
-                    <span>PROJECT PREVIEW</span>
-                  </div>
-                )}
+        {!loading && !error && featured.length > 0 && (
+          <div className="project-grid">
+            {featured.map((project) => (
+              <article className="project-card" key={project.id}>
+                <Link
+                  className="project-image"
+                  to={`/projects/${project.slug}`}
+                  onPointerEnter={() => prefetchProject(project.slug)}
+                  onFocus={() => prefetchProject(project.slug)}
+                >
+                  {project.thumbnailUrl ? (
+                    <img
+                      src={assetUrl(project.thumbnailUrl, 800)}
+                      alt={project.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="image-placeholder">
+                      <Layers3 size={38} />
+                      <span>PROJECT PREVIEW</span>
+                    </div>
+                  )}
 
-                <span className="image-arrow">
-                  <ArrowUpRight size={19} />
-                </span>
-              </Link>
-
-              <div className="project-meta">
-                <span>{project.category || 'PROJECT'}</span>
-                <span>
-                  {project.technologies?.length || 0} TECHNOLOGIES
-                </span>
-              </div>
-
-              <h3>
-                <Link to={`/projects/${project.slug}`}>
-                  {project.title}
+                  <span className="image-arrow">
+                    <ArrowUpRight size={19} />
+                  </span>
                 </Link>
-              </h3>
 
-              <p>{project.shortDescription}</p>
+                <div className="project-meta">
+                  <span>{project.category || 'PROJECT'}</span>
+                  <span>
+                    {project.technologies?.length || 0} TECHNOLOGIES
+                  </span>
+                </div>
 
-              <div className="tags">
-                {project.technologies?.slice(0, 5).map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+                <h3>
+                  <Link to={`/projects/${project.slug}`}>
+                    {project.title}
+                  </Link>
+                </h3>
+
+                <p>{project.shortDescription}</p>
+
+                <div className="tags">
+                  {project.technologies?.slice(0, 5).map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="about-section" id="about">
@@ -373,30 +428,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="process-section section">
-        <p className="eyebrow">HOW WE WORK</p>
+      <ProcessSection />
 
-        <h2>
-          A clear path from
-          <br />
-          <span>idea to execution.</span>
-        </h2>
-
-        <div className="process-grid">
-          {[
-            ['01', 'Understand', 'We start by understanding your goals and requirements.'],
-            ['02', 'Plan', 'We identify a practical approach and define the scope.'],
-            ['03', 'Build', 'We develop and refine the solution around your needs.'],
-            ['04', 'Improve', 'We test, maintain and improve the experience.'],
-          ].map(([number, title, description]) => (
-            <div key={number}>
-              <span>{number}</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <FaqSection limit={4} showAllLink />
 
       <section className="contact-section" id="contact">
         <div className="contact-orb" />

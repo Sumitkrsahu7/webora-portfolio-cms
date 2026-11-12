@@ -1,4 +1,3 @@
-
 package com.portfolio.content;
 
 import java.time.Instant;
@@ -17,6 +16,15 @@ public record SiteProfileResponse(
     String githubUrl,
     String linkedinUrl,
     String websiteUrl,
+    String companyTagline,
+    String companyStory,
+    String differentiatorsJson,
+    String whatsappNumber,
+    String supportEmail,
+    String businessHours,
+    String responseSla,
+    String footerTagline,
+    String logoUrl,
     Instant updatedAt
 ) {
     public static SiteProfileResponse from(SiteProfile p) {
@@ -33,6 +41,15 @@ public record SiteProfileResponse(
             p.getGithubUrl(),
             p.getLinkedinUrl(),
             p.getWebsiteUrl(),
+            p.getCompanyTagline(),
+            p.getCompanyStory(),
+            p.getDifferentiatorsJson(),
+            p.getWhatsappNumber(),
+            p.getSupportEmail(),
+            p.getBusinessHours(),
+            p.getResponseSla(),
+            p.getFooterTagline(),
+            p.getLogoUrl(),
             p.getUpdatedAt()
         );
     }

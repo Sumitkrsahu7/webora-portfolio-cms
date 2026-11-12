@@ -10,22 +10,33 @@ import {
   Workflow,
   ShieldCheck,
   MessageSquare,
+  Github,
+  Linkedin,
+  Globe,
+  Mail,
+  FileText,
+  Briefcase,
+  MessageCircle,
+  Clock,
+  Phone
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-
 
 import {
   getSkills,
   getServices,
   getTestimonials,
+  getProfile,
   assetUrl,
   submitInquiry,
 } from '../api'
+import { buildWhatsAppUrl, isSafeExternalUrl } from '../utils'
 
 import type {
   Skill,
   ServiceItem,
   Testimonial,
+  SiteProfile,
 } from '../api'
 
 
@@ -266,7 +277,20 @@ export function Skills() {
       />
 
       {loading && (
-        <div className="empty-state">Loading skills...</div>
+        <div className="skill-grid" aria-busy="true" aria-label="Loading capabilities">
+          {[1, 2, 3, 4].map((i) => (
+            <article className="skill-card skeleton-card" key={i}>
+              <div className="skeleton-line skeleton-title skeleton-shimmer" style={{ width: '45%' }} />
+              <div className="skeleton-line skeleton-shimmer" style={{ margin: '12px 0 16px' }} />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '60px', height: '24px', borderRadius: '3px' }} />
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '75px', height: '24px', borderRadius: '3px' }} />
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '55px', height: '24px', borderRadius: '3px' }} />
+                <div className="skeleton-line skeleton-shimmer" style={{ width: '65px', height: '24px', borderRadius: '3px' }} />
+              </div>
+            </article>
+          ))}
+        </div>
       )}
 
       {error && (
@@ -357,10 +381,22 @@ export function Testimonials() {
       />
 
       {loading ? (
-        <div className="testimonial-empty">
-          <MessageSquare size={30} />
-          <h2>Loading client stories...</h2>
-          <p>Please wait while we retrieve the latest feedback.</p>
+        <div className="testimonial-grid" aria-busy="true" aria-label="Loading client feedback">
+          {[1, 2].map((i) => (
+            <article className="testimonial-card skeleton-card" key={i}>
+              <div className="skeleton-icon skeleton-shimmer" style={{ width: '28px', height: '28px' }} />
+              <div className="skeleton-line skeleton-shimmer" style={{ margin: '14px 0 8px' }} />
+              <div className="skeleton-line skeleton-shimmer" />
+              <div className="skeleton-line skeleton-short skeleton-shimmer" />
+              <div className="testimonial-author" style={{ marginTop: '24px' }}>
+                <div className="skeleton-icon skeleton-shimmer" style={{ width: '46px', height: '46px', borderRadius: '50%' }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="skeleton-line skeleton-shimmer" style={{ width: '110px', height: '14px' }} />
+                  <div className="skeleton-line skeleton-shimmer" style={{ width: '70px', height: '11px' }} />
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       ) : error ? (
         <div className="testimonial-empty">
@@ -390,7 +426,7 @@ export function Testimonials() {
               <div className="testimonial-author">
                 {item.avatarUrl ? (
                   <img
-                    src={assetUrl(item.avatarUrl)}
+                    src={assetUrl(item.avatarUrl, 120)}
                     alt={item.name}
                     className="testimonial-avatar"
                   />
@@ -422,16 +458,30 @@ export function Testimonials() {
 
 
 export function Contact() {
+  const [profile, setProfile] = useState<SiteProfile | null>(null)
   const [form, setForm] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
+    hpField: '',
   })
 
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    getProfile()
+      .then((data) => {
+        if (active) setProfile(data)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -455,10 +505,18 @@ export function Contact() {
     setError('')
 
     try {
-      await submitInquiry(form)
+      const ack = await submitInquiry({
+        inquiryType: 'GENERAL',
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+        hpField: form.hpField || undefined,
+      })
 
       setSuccess(
-        'Your message has been submitted successfully. We will get back to you soon.'
+        ack.message ||
+          'Your message has been submitted successfully. We will get back to you soon.'
       )
 
       setForm({
@@ -466,6 +524,7 @@ export function Contact() {
         email: '',
         subject: '',
         message: '',
+        hpField: '',
       })
     } catch (err) {
       setError(
@@ -477,6 +536,13 @@ export function Contact() {
       setSubmitting(false)
     }
   }
+
+  const primaryEmail = profile?.supportEmail?.trim() || profile?.email?.trim() || ''
+  const phone = profile?.phone?.trim() || ''
+  const whatsappUrl = buildWhatsAppUrl(
+    profile?.whatsappNumber,
+    'Hello WEBORA team, I have a question about your services.'
+  )
 
   return (
     <section className="page-section">
@@ -492,92 +558,161 @@ export function Contact() {
         description="Share what you want to build, improve or maintain. We can start by understanding the problem and discussing the next steps."
       />
 
-      <div className="contact-card">
-        <ShieldCheck size={28} />
+      <div className="quote-layout">
+        <div className="contact-card">
+          <ShieldCheck size={28} />
 
-        <h2>Let's start a conversation.</h2>
+          <h2>Let's start a conversation.</h2>
 
-        <p>
-          Tell us a little about your project, its goals and what kind of help
-          you are looking for.
-        </p>
+          <p>
+            Tell us a little about your project, its goals and what kind of help
+            you are looking for.
+          </p>
 
-        <form className="contact-form" onSubmit={handleSubmit}>
-          <div className="contact-form-grid">
-            <div className="contact-field">
-              <label htmlFor="contact-name">Your name</label>
+          <form className="contact-form" onSubmit={handleSubmit}>
+            <div className="hp-field" aria-hidden="true">
+              <label htmlFor="contact-hp">Leave this field empty</label>
               <input
-                id="contact-name"
-                name="name"
+                id="contact-hp"
+                name="hpField"
                 type="text"
-                placeholder="Enter your name"
-                value={form.name}
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.hpField}
                 onChange={handleChange}
-                required
               />
             </div>
 
-            <div className="contact-field">
-              <label htmlFor="contact-email">Email address</label>
-              <input
-                id="contact-email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
+            <div className="contact-form-grid">
+              <div className="contact-field">
+                <label htmlFor="contact-name">Your name</label>
+                <input
+                  id="contact-name"
+                  name="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="contact-field">
+                <label htmlFor="contact-email">Email address</label>
+                <input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="contact-field contact-field-full">
+                <label htmlFor="contact-subject">Subject</label>
+                <input
+                  id="contact-subject"
+                  name="subject"
+                  type="text"
+                  placeholder="What would you like to discuss?"
+                  value={form.subject}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="contact-field contact-field-full">
+                <label htmlFor="contact-message">Your message</label>
+                <textarea
+                  id="contact-message"
+                  name="message"
+                  rows={6}
+                  placeholder="Tell us about your project or requirements..."
+                  value={form.message}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
 
-            <div className="contact-field contact-field-full">
-              <label htmlFor="contact-subject">Subject</label>
-              <input
-                id="contact-subject"
-                name="subject"
-                type="text"
-                placeholder="What would you like to discuss?"
-                value={form.subject}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            {success && (
+              <div className="contact-feedback success" role="status" aria-live="polite">
+                {success}
+              </div>
+            )}
 
-            <div className="contact-field contact-field-full">
-              <label htmlFor="contact-message">Your message</label>
-              <textarea
-                id="contact-message"
-                name="message"
-                rows={6}
-                placeholder="Tell us about your project or requirements..."
-                value={form.message}
-                onChange={handleChange}
-                required
-              />
+            {error && (
+              <div className="contact-feedback error" role="alert" aria-live="polite">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="button primary contact-submit"
+              disabled={submitting}
+            >
+              {submitting ? 'Sending message...' : 'Send message'}
+              {!submitting && <ArrowUpRight size={16} />}
+            </button>
+          </form>
+        </div>
+
+        <aside className="quote-sidebar">
+          <div className="quote-aside-card">
+            <h3>Direct Channels</h3>
+            <div className="contact-channels-list">
+              {primaryEmail && (
+                <a className="contact-channel-item" href={`mailto:${primaryEmail}`}>
+                  <Mail size={16} />
+                  <span>{primaryEmail}</span>
+                </a>
+              )}
+              {phone && (
+                <a className="contact-channel-item" href={`tel:${phone.replace(/[^\d+]/g, '')}`}>
+                  <Phone size={16} />
+                  <span>{phone}</span>
+                </a>
+              )}
+              {(profile?.responseSla || profile?.businessHours) && (
+                <div className="quote-sla-box">
+                  <Clock size={16} />
+                  <div>
+                    {profile?.responseSla && <p>{profile.responseSla}</p>}
+                    {profile?.businessHours && <small>{profile.businessHours}</small>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {success && (
-            <div className="contact-feedback success" role="status" aria-live="polite">
-              {success}
+          {whatsappUrl && (
+            <div className="quote-aside-card whatsapp-aside">
+              <h3>WhatsApp Business Chat</h3>
+              <p>Connect quickly on WhatsApp for project questions or quick consultations.</p>
+              <a
+                className="button secondary whatsapp-btn"
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={16} />
+                Chat on WhatsApp
+                <ArrowUpRight size={15} />
+              </a>
             </div>
           )}
 
-          {error && (
-            <div className="contact-feedback error" role="alert" aria-live="polite">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="button primary contact-submit"
-            disabled={submitting}
-          >
-            {submitting ? 'Sending message...' : 'Send message'}
-            {!submitting && <ArrowUpRight size={16} />}
-          </button>
-        </form>
+          <div className="quote-aside-card">
+            <h3>Need a full estimate?</h3>
+            <p>Use our guided Request a Quote form to select a pricing tier, budget, and timeline.</p>
+            <Link className="button primary" to="/request-quote">
+              Request a Quote <ArrowUpRight size={15} />
+            </Link>
+          </div>
+        </aside>
       </div>
     </section>
   )
@@ -585,41 +720,116 @@ export function Contact() {
 
 
 export function Profile() {
+  const [profile, setProfile] = useState<SiteProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+
+    getProfile()
+      .then((data) => {
+        if (active) setProfile(data)
+      })
+      .catch(() => {
+        if (active) setProfile(null)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const name = profile?.name?.trim() || 'WEBORA'
+  const headline = profile?.headline?.trim() || 'Software Development & Digital Solutions'
+  const bio =
+    profile?.bio?.trim() ||
+    'Building reliable, maintainable web applications, business websites, and digital solutions.'
+  const location = profile?.location?.trim() || ''
+  const email = profile?.email?.trim() || ''
+
+  if (loading) {
+    return (
+      <section className="page-section profile-page" aria-busy="true">
+        <div className="skeleton-line skeleton-title skeleton-shimmer" style={{ width: '40%', height: '32px' }} />
+        <div className="skeleton-line skeleton-shimmer" style={{ width: '60%', height: '18px', marginTop: '12px' }} />
+        <div className="profile-detail-card skeleton-shimmer" style={{ height: '240px', marginTop: '24px' }} />
+      </section>
+    )
+  }
+
   return (
-    <section className="page-section">
+    <section className="page-section profile-page">
       <PageHeading
-        eyebrow="WEBORA PROFILE"
+        eyebrow="ENGINEERING PROFILE"
         title={
           <>
-            A practical partner
+            {name}
             <br />
-            <span>for digital work.</span>
+            <span>{headline}</span>
           </>
         }
-        description="Webora is focused on building, improving and maintaining software and digital experiences."
+        description={location ? `Based in ${location}. Focused on full-stack architecture, clean code, and resilient web solutions.` : 'Focused on full-stack architecture, clean code, and resilient web solutions.'}
       />
 
-      <div className="content-columns">
-        <div>
-          <h2>Focus</h2>
-          <p>
-            Web development, software development, integrations and ongoing
-            software maintenance.
-          </p>
+      <div className="profile-detail-card">
+        <div className="profile-bio-block">
+          <h2>About</h2>
+          <p>{bio}</p>
         </div>
 
-        <div>
-          <h2>Approach</h2>
-          <p>
-            Understand the requirement, plan the solution, build carefully
-            and improve based on feedback.
-          </p>
+        <div className="profile-links-row">
+          {email && (
+            <a href={`mailto:${email}`} className="profile-link-badge">
+              <Mail size={15} /> {email}
+            </a>
+          )}
+          {isSafeExternalUrl(profile?.githubUrl) && (
+            <a
+              href={profile!.githubUrl!.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="profile-link-badge"
+            >
+              <Github size={15} /> GitHub
+            </a>
+          )}
+          {isSafeExternalUrl(profile?.linkedinUrl) && (
+            <a
+              href={profile!.linkedinUrl!.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="profile-link-badge"
+            >
+              <Linkedin size={15} /> LinkedIn
+            </a>
+          )}
+          {isSafeExternalUrl(profile?.websiteUrl) && (
+            <a
+              href={profile!.websiteUrl!.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="profile-link-badge"
+            >
+              <Globe size={15} /> Website
+            </a>
+          )}
+        </div>
+
+        <div className="profile-actions-strip">
+          <Link className="button primary" to="/resume">
+            <FileText size={16} /> View Curriculum Vitae
+          </Link>
+          <Link className="button secondary" to="/experience">
+            <Briefcase size={16} /> Career Timeline
+          </Link>
+          <Link className="button secondary" to="/contact">
+            Work with us <ArrowRight size={16} />
+          </Link>
         </div>
       </div>
-
-      <Link className="button primary" to="/contact">
-        Work with us <ArrowRight size={16} />
-      </Link>
     </section>
   )
 }

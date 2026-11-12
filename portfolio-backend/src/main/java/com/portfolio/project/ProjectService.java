@@ -2,15 +2,19 @@
 package com.portfolio.project;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -74,25 +78,61 @@ public class ProjectService {
         return projects.map(ProjectResponse::from);
     }
 
-    // Public: Get all published projects
+    // Public: Get all published projects using lightweight projection + single batch tech lookup
     @Transactional(readOnly = true)
     public List<ProjectResponse> getPublishedProjects() {
-        return repository
-            .findAllByStatusOrderByCreatedAtDesc(ProjectStatus.PUBLISHED)
-            .stream()
-            .map(ProjectResponse::from)
-            .toList();
+        List<ProjectSummaryProjection> summaries =
+            repository.findSummaryByStatus(ProjectStatus.PUBLISHED);
+        return toSummaryResponses(summaries);
     }
 
-    // Public: Get up to six featured published projects
+    // Public: Get up to six featured published projects using SQL paging + single batch tech lookup
     @Transactional(readOnly = true)
     public List<ProjectResponse> getFeaturedProjects() {
-        return repository
-            .findTop6ByStatusAndFeaturedTrueOrderByCreatedAtDesc(
-                ProjectStatus.PUBLISHED
-            )
-            .stream()
-            .map(ProjectResponse::from)
+        List<ProjectSummaryProjection> summaries =
+            repository.findFeaturedSummaryByStatus(
+                ProjectStatus.PUBLISHED,
+                PageRequest.of(0, 6)
+            );
+        return toSummaryResponses(summaries);
+    }
+
+    private List<ProjectResponse> toSummaryResponses(List<ProjectSummaryProjection> summaries) {
+        if (summaries.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> ids = summaries.stream()
+            .map(ProjectSummaryProjection::getId)
+            .toList();
+
+        Map<UUID, Set<String>> techByProject = new LinkedHashMap<>();
+        for (Object[] row : repository.findTechnologiesByProjectIds(ids)) {
+            UUID projectId = (UUID) row[0];
+            String tech = (String) row[1];
+            techByProject.computeIfAbsent(projectId, ignored -> new LinkedHashSet<>()).add(tech);
+        }
+
+        return summaries.stream()
+            .map(s -> new ProjectResponse(
+                s.getId(),
+                s.getTitle(),
+                s.getSlug(),
+                s.getShortDescription(),
+                null,
+                s.getCategory(),
+                s.getThumbnailUrl(),
+                s.getLiveUrl(),
+                s.getGithubUrl(),
+                s.getStartDate(),
+                s.getCompletionDate(),
+                s.isFeatured(),
+                s.getStatus().name(),
+                Set.copyOf(techByProject.getOrDefault(s.getId(), Set.of())),
+                List.of(),
+                s.getCreatedAt(),
+                s.getUpdatedAt()
+            ))
             .toList();
     }
 

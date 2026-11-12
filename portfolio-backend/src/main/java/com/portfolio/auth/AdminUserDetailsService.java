@@ -1,10 +1,12 @@
 package com.portfolio.auth;
 
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class AdminUserDetailsService implements UserDetailsService {
@@ -23,11 +25,12 @@ public class AdminUserDetailsService implements UserDetailsService {
             new UsernameNotFoundException("Admin account not found")
         );
 
-        return User.builder()
-            .username(admin.getEmail())
-            .password(admin.getPasswordHash())
-            .roles(admin.getRole())
-            .disabled(!admin.isEnabled())
-            .build();
+        return new AdminPrincipal(
+            admin.getEmail(),
+            admin.getPasswordHash(),
+            admin.isEnabled(),
+            admin.getTokenVersion(),
+            List.of(new SimpleGrantedAuthority("ROLE_" + admin.getRole()))
+        );
     }
 }

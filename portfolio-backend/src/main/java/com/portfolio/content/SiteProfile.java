@@ -45,6 +45,33 @@ public class SiteProfile {
     @Column(name = "website_url", columnDefinition = "nvarchar(max)")
     private String websiteUrl;
 
+    @Column(name = "company_tagline", length = 255)
+    private String companyTagline;
+
+    @Column(name = "company_story", columnDefinition = "nvarchar(max)")
+    private String companyStory;
+
+    @Column(name = "differentiators_json", columnDefinition = "nvarchar(max)")
+    private String differentiatorsJson;
+
+    @Column(name = "whatsapp_number", length = 30)
+    private String whatsappNumber;
+
+    @Column(name = "support_email", length = 255)
+    private String supportEmail;
+
+    @Column(name = "business_hours", length = 160)
+    private String businessHours;
+
+    @Column(name = "response_sla", length = 160)
+    private String responseSla;
+
+    @Column(name = "footer_tagline", length = 255)
+    private String footerTagline;
+
+    @Column(name = "logo_url", columnDefinition = "nvarchar(max)")
+    private String logoUrl;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -62,6 +89,15 @@ public class SiteProfile {
         this.githubUrl = request.githubUrl();
         this.linkedinUrl = request.linkedinUrl();
         this.websiteUrl = request.websiteUrl();
+        this.companyTagline = request.companyTagline();
+        this.companyStory = request.companyStory();
+        this.differentiatorsJson = request.differentiatorsJson();
+        this.whatsappNumber = request.whatsappNumber();
+        this.supportEmail = request.supportEmail();
+        this.businessHours = request.businessHours();
+        this.responseSla = request.responseSla();
+        this.footerTagline = request.footerTagline();
+        this.logoUrl = request.logoUrl();
         this.updatedAt = Instant.now();
     }
 
@@ -84,5 +120,14 @@ public class SiteProfile {
     public String getGithubUrl() { return githubUrl; }
     public String getLinkedinUrl() { return linkedinUrl; }
     public String getWebsiteUrl() { return websiteUrl; }
+    public String getCompanyTagline() { return companyTagline; }
+    public String getCompanyStory() { return companyStory; }
+    public String getDifferentiatorsJson() { return differentiatorsJson; }
+    public String getWhatsappNumber() { return whatsappNumber; }
+    public String getSupportEmail() { return supportEmail; }
+    public String getBusinessHours() { return businessHours; }
+    public String getResponseSla() { return responseSla; }
+    public String getFooterTagline() { return footerTagline; }
+    public String getLogoUrl() { return logoUrl; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

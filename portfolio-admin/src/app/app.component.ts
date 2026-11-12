@@ -3,6 +3,12 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ADMIN_TOKEN_KEY, AdminSessionService } from './admin-session.service';
+import { ExperiencesPanelComponent } from './components/experiences-panel.component';
+import { TeamMembersPanelComponent } from './components/team-members-panel.component';
+import { ProcessStepsPanelComponent } from './components/process-steps-panel.component';
+import { PricingPoliciesPanelComponent } from './components/pricing-policies-panel.component';
+import { FaqsPanelComponent } from './components/faqs-panel.component';
 
 const API_URL = environment.apiUrl;
 const API_ORIGIN = new URL(API_URL).origin;
@@ -55,7 +61,16 @@ interface Skill {
 interface ServiceItem {
   id: string;
   title: string;
+  slug?: string;
+  shortDescription?: string;
   description: string;
+  targetAudience?: string;
+  keyFeaturesJson?: string;
+  deliverablesJson?: string;
+  startingPriceLabel?: string;
+  deliveryTimeline?: string;
+  ctaLabel?: string;
+  overviewDetails?: string;
   icon: string | null;
   displayOrder: number;
   published: boolean;
@@ -76,6 +91,15 @@ interface SiteProfile {
   githubUrl: string;
   linkedinUrl: string;
   websiteUrl: string;
+  companyTagline?: string;
+  companyStory?: string;
+  differentiatorsJson?: string;
+  whatsappNumber?: string;
+  supportEmail?: string;
+  businessHours?: string;
+  responseSla?: string;
+  footerTagline?: string;
+  logoUrl?: string;
   updatedAt?: string;
 }
 
@@ -86,6 +110,10 @@ interface Testimonial {
   company: string;
   content: string;
   avatarUrl: string;
+  mediaType?: 'WRITTEN' | 'VIDEO';
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  projectTitle?: string;
   displayOrder: number;
   published: boolean;
   createdAt?: string;
@@ -98,6 +126,17 @@ interface Inquiry {
   email: string;
   subject: string | null;
   message: string;
+  inquiryType?: 'GENERAL' | 'QUOTE' | string;
+  phone?: string | null;
+  companyName?: string | null;
+  projectCategory?: string | null;
+  selectedPackage?: string | null;
+  budgetRange?: string | null;
+  targetTimeline?: string | null;
+  projectRequirements?: string | null;
+  websiteOrReferenceUrl?: string | null;
+  preferredContactMethod?: string | null;
+  internalNotes?: string | null;
   status: 'NEW' | 'READ' | 'REPLIED';
   createdAt: string;
   updatedAt: string;
@@ -119,7 +158,15 @@ interface Administrator {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ExperiencesPanelComponent,
+    TeamMembersPanelComponent,
+    ProcessStepsPanelComponent,
+    PricingPoliciesPanelComponent,
+    FaqsPanelComponent
+  ],
   template: `
     @if (!token) {
       <div class="login-page">
@@ -228,6 +275,30 @@ interface Administrator {
 
           <button
             class="nav-item"
+            [class.active]="view === 'process'"
+            (click)="navigate('process')"
+          >
+            <span>↳</span> Process Stages
+          </button>
+
+          <button
+            class="nav-item"
+            [class.active]="view === 'pricing'"
+            (click)="navigate('pricing')"
+          >
+            <span>₹</span> Pricing &amp; Policies
+          </button>
+
+          <button
+            class="nav-item"
+            [class.active]="view === 'faqs'"
+            (click)="navigate('faqs')"
+          >
+            <span>?</span> FAQs
+          </button>
+
+          <button
+            class="nav-item"
             [class.active]="view === 'testimonials'"
             (click)="navigate('testimonials')"
           >
@@ -236,10 +307,26 @@ interface Administrator {
 
           <button
             class="nav-item"
+            [class.active]="view === 'experiences'"
+            (click)="navigate('experiences')"
+          >
+            <span>⏱</span> Experiences
+          </button>
+
+          <button
+            class="nav-item"
+            [class.active]="view === 'team'"
+            (click)="navigate('team')"
+          >
+            <span>◎</span> Team Members
+          </button>
+
+          <button
+            class="nav-item"
             [class.active]="view === 'profile'"
             (click)="navigate('profile')"
           >
-          <span>◎</span> Profile
+          <span>⚙</span> Company Profile
           </button>
 
           <button
@@ -299,8 +386,13 @@ interface Administrator {
                   view === 'projects' ? 'Projects' :
                   view === 'skills' ? 'Skills' :
                   view === 'services' ? 'Services' :
-                  view === 'profile' ? 'Profile' :
+                  view === 'process' ? 'Development Process' :
+                  view === 'pricing' ? 'Pricing & Policies' :
+                  view === 'faqs' ? 'FAQs' :
+                  view === 'profile' ? 'Company Profile' :
+                  view === 'team' ? 'Team Members' :
                   view === 'testimonials' ? 'Testimonials' :
+                  view === 'experiences' ? 'Experiences' :
                   view === 'inquiries' ? 'Inquiries' :
                   view === 'administrators' ? 'Administrators' :
                   'Project editor'
@@ -1263,14 +1355,34 @@ interface Administrator {
 
     <form (ngSubmit)="saveService()">
       <div class="form-grid">
-        <div class="field full-field">
+        <div class="field">
           <label>Service title *</label>
           <input
             name="serviceTitle"
             [(ngModel)]="serviceForm.title"
             required
             maxlength="160"
-            placeholder="e.g. Web Development"
+            placeholder="e.g. Website Development"
+          />
+        </div>
+
+        <div class="field">
+          <label>URL slug (optional auto-generated)</label>
+          <input
+            name="serviceSlug"
+            [(ngModel)]="serviceForm.slug"
+            maxlength="160"
+            placeholder="website-development"
+          />
+        </div>
+
+        <div class="field full-field">
+          <label>Short summary (cards)</label>
+          <input
+            name="serviceShortDesc"
+            [(ngModel)]="serviceForm.shortDescription"
+            maxlength="500"
+            placeholder="Concise one-line business value summary..."
           />
         </div>
 
@@ -1280,9 +1392,79 @@ interface Administrator {
             name="serviceDescription"
             [(ngModel)]="serviceForm.description"
             required
-            rows="4"
+            rows="3"
             placeholder="Describe what this service includes..."
           ></textarea>
+        </div>
+
+        <div class="field full-field">
+          <label>Overview details (Service detail page)</label>
+          <textarea
+            name="serviceOverview"
+            [(ngModel)]="serviceForm.overviewDetails"
+            rows="4"
+            placeholder="Detailed scope, technical fit, and commercial benefits..."
+          ></textarea>
+        </div>
+
+        <div class="field full-field">
+          <label>Who this is for (Target audience)</label>
+          <input
+            name="serviceAudience"
+            [(ngModel)]="serviceForm.targetAudience"
+            maxlength="500"
+            placeholder="e.g. Growing service businesses, startups, and consulting teams."
+          />
+        </div>
+
+        <div class="field">
+          <label>Key features (one per line)</label>
+          <textarea
+            name="serviceFeaturesText"
+            [(ngModel)]="serviceFeaturesText"
+            rows="4"
+            placeholder="Responsive mobile-first layout&#10;CMS content management&#10;SEO & speed tuning"
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label>Deliverables included (one per line)</label>
+          <textarea
+            name="serviceDeliverablesText"
+            [(ngModel)]="serviceDeliverablesText"
+            rows="4"
+            placeholder="Production website&#10;Admin CMS panel&#10;6 months basic support"
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label>Starting price label</label>
+          <input
+            name="servicePriceLabel"
+            [(ngModel)]="serviceForm.startingPriceLabel"
+            maxlength="120"
+            placeholder="e.g. Starting ₹4,000 or Custom Quote"
+          />
+        </div>
+
+        <div class="field">
+          <label>Estimated timeline</label>
+          <input
+            name="serviceTimeline"
+            [(ngModel)]="serviceForm.deliveryTimeline"
+            maxlength="120"
+            placeholder="e.g. 2 - 4 weeks"
+          />
+        </div>
+
+        <div class="field">
+          <label>CTA label</label>
+          <input
+            name="serviceCtaLabel"
+            [(ngModel)]="serviceForm.ctaLabel"
+            maxlength="80"
+            placeholder="Explore Service"
+          />
         </div>
 
         <div class="field">
@@ -1291,10 +1473,10 @@ interface Administrator {
             name="serviceIcon"
             [(ngModel)]="serviceForm.icon"
             maxlength="100"
-            placeholder="e.g. Code2, Wrench, Workflow"
+            placeholder="e.g. globe, layers, code, wrench, palette"
           />
           <small>
-            Use a supported icon identifier or leave blank.
+            Supported: globe, layers, code, wrench, palette, smartphone, database, shield, cloud.
           </small>
         </div>
 
@@ -1345,51 +1527,71 @@ interface Administrator {
           @if (view === 'profile') {
   <section class="section-heading">
     <div>
-      <p class="eyebrow">WEBSITE CONTENT</p>
-      <h2>Manage your profile</h2>
+      <p class="eyebrow">COMPANY IDENTITY &amp; CONTACT</p>
+      <h2>Manage company profile</h2>
       <p class="muted">
-        Update the information displayed across your portfolio.
+        Update WEBORA company messaging, WhatsApp contact, business hours, and branding.
       </p>
     </div>
   </section>
 
   @if (contentLoading) {
-    <div class="empty-state">Loading profile...</div>
+    <div class="empty-state">Loading company profile...</div>
   } @else {
     <div class="form-panel content-editor">
       <form (ngSubmit)="saveProfile()">
 
-        <h3>Basic information</h3>
+        <h3>Company identity</h3>
 
         <div class="form-grid">
           <div class="field">
-            <label>Full name *</label>
+            <label>Company / Brand name *</label>
             <input
               name="profileName"
               [(ngModel)]="profileForm.name"
               required
               maxlength="160"
-              placeholder="Your name"
+              placeholder="WEBORA"
             />
           </div>
 
           <div class="field">
-            <label>Professional headline</label>
+            <label>Primary headline</label>
             <input
               name="profileHeadline"
               [(ngModel)]="profileForm.headline"
               maxlength="255"
-              placeholder="e.g. Junior Software Engineer"
+              placeholder="e.g. Software Development & Digital Solutions"
             />
           </div>
 
           <div class="field full-field">
-            <label>About / Bio</label>
+            <label>Company tagline</label>
+            <input
+              name="profileCompanyTagline"
+              [(ngModel)]="profileForm.companyTagline"
+              maxlength="255"
+              placeholder="Practical software systems engineered to move businesses forward."
+            />
+          </div>
+
+          <div class="field full-field">
+            <label>Short overview / Bio</label>
             <textarea
               name="profileBio"
               [(ngModel)]="profileForm.bio"
-              rows="6"
-              placeholder="Write a short professional introduction..."
+              rows="4"
+              placeholder="Write a concise company overview shown on the homepage..."
+            ></textarea>
+          </div>
+
+          <div class="field full-field">
+            <label>About WEBORA company story (About Us page)</label>
+            <textarea
+              name="profileCompanyStory"
+              [(ngModel)]="profileForm.companyStory"
+              rows="5"
+              placeholder="Share WEBORA's founding focus, engineering standards, and how your team works with clients..."
             ></textarea>
           </div>
 
@@ -1398,21 +1600,41 @@ interface Administrator {
             <input
               name="profileLocation"
               [(ngModel)]="profileForm.location"
-              placeholder="Your location"
+              placeholder="e.g. India / Remote Global"
+            />
+          </div>
+
+          <div class="field">
+            <label>Footer tagline</label>
+            <input
+              name="profileFooterTagline"
+              [(ngModel)]="profileForm.footerTagline"
+              maxlength="255"
+              placeholder="Digital experiences, thoughtfully built."
             />
           </div>
         </div>
 
-        <h3>Contact information</h3>
+        <h3>Contact, WhatsApp &amp; Support SLA</h3>
 
         <div class="form-grid">
           <div class="field">
-            <label>Email</label>
+            <label>Primary Email</label>
             <input
               type="email"
               name="profileEmail"
               [(ngModel)]="profileForm.email"
-              placeholder="you@example.com"
+              placeholder="hello@webora.example"
+            />
+          </div>
+
+          <div class="field">
+            <label>Support Email</label>
+            <input
+              type="email"
+              name="profileSupportEmail"
+              [(ngModel)]="profileForm.supportEmail"
+              placeholder="support@webora.example"
             />
           </div>
 
@@ -1422,14 +1644,53 @@ interface Administrator {
               name="profilePhone"
               [(ngModel)]="profileForm.phone"
               maxlength="50"
-              placeholder="Your contact number"
+              placeholder="+91 ..."
+            />
+          </div>
+
+          <div class="field">
+            <label>WhatsApp Number (international digits e.g. +919876543210)</label>
+            <input
+              name="profileWhatsappNumber"
+              [(ngModel)]="profileForm.whatsappNumber"
+              maxlength="30"
+              placeholder="+919876543210"
+            />
+          </div>
+
+          <div class="field">
+            <label>Business Hours</label>
+            <input
+              name="profileBusinessHours"
+              [(ngModel)]="profileForm.businessHours"
+              maxlength="160"
+              placeholder="Mon - Sat, 10:00 AM - 7:00 PM IST"
+            />
+          </div>
+
+          <div class="field">
+            <label>Response SLA</label>
+            <input
+              name="profileResponseSla"
+              [(ngModel)]="profileForm.responseSla"
+              maxlength="160"
+              placeholder="Within 1 business day"
             />
           </div>
         </div>
 
-        <h3>Profile links</h3>
+        <h3>Branding &amp; external links</h3>
 
         <div class="form-grid">
+          <div class="field full-field">
+            <label>Company Logo URL (optional)</label>
+            <input
+              name="profileLogoUrl"
+              [(ngModel)]="profileForm.logoUrl"
+              placeholder="https://res.cloudinary.com/..."
+            />
+          </div>
+
           <div class="field full-field">
             <label>Profile image URL</label>
             <input
@@ -1440,7 +1701,7 @@ interface Administrator {
           </div>
 
           <div class="field full-field">
-            <label>Resume URL</label>
+            <label>Company deck / Resume URL</label>
             <input
               name="profileResume"
               [(ngModel)]="profileForm.resumeUrl"
@@ -1554,13 +1815,52 @@ interface Administrator {
             />
           </div>
 
+          <div class="field">
+            <label>Format *</label>
+            <select name="testimonialMediaType" [(ngModel)]="testimonialForm.mediaType">
+              <option value="WRITTEN">Written Review</option>
+              <option value="VIDEO">Video Testimonial</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Related Project Title</label>
+            <input
+              name="testimonialProjectTitle"
+              [(ngModel)]="testimonialForm.projectTitle"
+              maxlength="160"
+              placeholder="e.g. Commerce Storefront"
+            />
+          </div>
+
+          @if (testimonialForm.mediaType === 'VIDEO') {
+            <div class="field full-field">
+              <label>Video URL (YouTube / Vimeo / MP4) *</label>
+              <input
+                type="url"
+                name="testimonialVideoUrl"
+                [(ngModel)]="testimonialForm.videoUrl"
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+            </div>
+
+            <div class="field full-field">
+              <label>Video Poster / Thumbnail URL</label>
+              <input
+                name="testimonialThumbUrl"
+                [(ngModel)]="testimonialForm.thumbnailUrl"
+                placeholder="https://res.cloudinary.com/..."
+              />
+            </div>
+          }
+
           <div class="field full-field">
-            <label>Testimonial *</label>
+            <label>{{ testimonialForm.mediaType === 'VIDEO' ? 'Summary Quote / Caption (optional)' : 'Testimonial *' }}</label>
             <textarea
               name="testimonialContent"
               [(ngModel)]="testimonialForm.content"
               rows="5"
-              required
+              [required]="testimonialForm.mediaType !== 'VIDEO'"
               placeholder="Enter the actual feedback..."
             ></textarea>
           </div>
@@ -1635,13 +1935,19 @@ interface Administrator {
           <h3>{{ item.name }}</h3>
 
           <p class="muted">
+            {{ item.mediaType === 'VIDEO' ? '[VIDEO] ' : '[WRITTEN] ' }}
             {{ item.role || 'No role specified' }}
             {{ item.company ? ' · ' + item.company : '' }}
+            {{ item.projectTitle ? ' · Project: ' + item.projectTitle : '' }}
           </p>
 
-          <p class="testimonial-content">
-            {{ item.content }}
-          </p>
+          @if (item.content) {
+            <p class="testimonial-content">
+              {{ item.content }}
+            </p>
+          } @else if (item.videoUrl) {
+            <p class="testimonial-content muted">Video link: {{ item.videoUrl }}</p>
+          }
 
           <small class="testimonial-order">
             Display order: {{ item.displayOrder }}
@@ -1697,11 +2003,17 @@ interface Administrator {
       <input
         type="text"
         [(ngModel)]="inquirySearchTerm"
-        placeholder="Search by name, email or subject..."
+        placeholder="Search by name, email, company, package or subject..."
       />
 
+      <select [(ngModel)]="inquiryTypeFilter">
+        <option value="ALL">All types</option>
+        <option value="QUOTE">Quote requests</option>
+        <option value="GENERAL">General inquiries</option>
+      </select>
+
       <select [(ngModel)]="inquiryFilter">
-        <option value="ALL">All inquiries</option>
+        <option value="ALL">All statuses</option>
         <option value="NEW">New</option>
         <option value="READ">Read</option>
         <option value="REPLIED">Replied</option>
@@ -1712,6 +2024,10 @@ interface Administrator {
       <div class="inquiry-stat">
         <span>Total</span>
         <strong>{{ inquiries.length }}</strong>
+      </div>
+      <div class="inquiry-stat">
+        <span>Quotes</span>
+        <strong>{{ quoteInquiriesCount }}</strong>
       </div>
       <div class="inquiry-stat">
         <span>New</span>
@@ -1732,7 +2048,7 @@ interface Administrator {
     } @else if (filteredInquiries.length === 0) {
       <div class="empty-state">
         <h3>No inquiries found</h3>
-        <p>Messages submitted through your portfolio contact form will appear here.</p>
+        <p>Messages and quote requests submitted through your website will appear here.</p>
       </div>
     } @else {
       <div class="inquiry-list">
@@ -1749,19 +2065,46 @@ interface Administrator {
                 <a [href]="'mailto:' + item.email">
                   {{ item.email }}
                 </a>
+                @if (item.companyName) {
+                  <small style="display:block;color:#64748b;margin-top:2px;">
+                    Company: {{ item.companyName }}
+                  </small>
+                }
               </div>
 
-              <span
-                class="inquiry-status"
-                [class.status-new]="item.status === 'NEW'"
-                [class.status-read]="item.status === 'READ'"
-                [class.status-replied]="item.status === 'REPLIED'"
-              >
-                {{ item.status }}
-              </span>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span class="inquiry-status" style="background:rgba(59,130,246,0.12);color:#2563eb;">
+                  {{ item.inquiryType === 'QUOTE' ? 'QUOTE' : 'GENERAL' }}
+                </span>
+                <span
+                  class="inquiry-status"
+                  [class.status-new]="item.status === 'NEW'"
+                  [class.status-read]="item.status === 'READ'"
+                  [class.status-replied]="item.status === 'REPLIED'"
+                >
+                  {{ item.status }}
+                </span>
+              </div>
             </div>
 
             <h4>{{ item.subject || 'No subject' }}</h4>
+
+            @if (item.inquiryType === 'QUOTE') {
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:12px;color:#475569;">
+                @if (item.projectCategory) {
+                  <span>Category: <strong>{{ item.projectCategory }}</strong></span>
+                }
+                @if (item.selectedPackage) {
+                  <span>• Package: <strong>{{ item.selectedPackage }}</strong></span>
+                }
+                @if (item.budgetRange) {
+                  <span>• Budget: <strong>{{ item.budgetRange }}</strong></span>
+                }
+                @if (item.targetTimeline) {
+                  <span>• Timeline: <strong>{{ item.targetTimeline }}</strong></span>
+                }
+              </div>
+            }
 
             <p class="inquiry-message">
               {{ item.message }}
@@ -1827,8 +2170,47 @@ interface Administrator {
 
             @if (selectedInquiryId === item.id) {
               <div class="inquiry-details">
-                <span>Full message</span>
-                <p>{{ item.message }}</p>
+                <span>Full message & requirements</span>
+                <p>{{ item.projectRequirements || item.message }}</p>
+
+                @if (item.phone || item.preferredContactMethod || item.websiteOrReferenceUrl) {
+                  <div style="display:grid;gap:6px;margin:10px 0;font-size:13px;">
+                    @if (item.phone) {
+                      <div><strong>Phone / WhatsApp:</strong> {{ item.phone }}</div>
+                    }
+                    @if (item.preferredContactMethod) {
+                      <div><strong>Preferred Contact:</strong> {{ item.preferredContactMethod }}</div>
+                    }
+                    @if (isSafeUrl(item.websiteOrReferenceUrl)) {
+                      <div>
+                        <strong>Reference URL:</strong>
+                        <a [href]="item.websiteOrReferenceUrl!" target="_blank" rel="noopener noreferrer">
+                          {{ item.websiteOrReferenceUrl }}
+                        </a>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div style="margin-top:12px;display:grid;gap:8px;">
+                  <label style="font-size:12px;font-weight:600;color:#475569;">Internal team notes</label>
+                  <textarea
+                    rows="3"
+                    [(ngModel)]="inquiryNotesDraft[item.id]"
+                    placeholder="Record call outcomes, scope estimate, or follow-up date..."
+                  ></textarea>
+                  <div>
+                    <button
+                      type="button"
+                      class="secondary"
+                      [disabled]="busy"
+                      (click)="saveInquiryNotes(item)"
+                    >
+                      Save notes
+                    </button>
+                  </div>
+                </div>
+
                 <small>Last updated: {{ item.updatedAt | date:'medium' }}</small>
               </div>
             }
@@ -1841,6 +2223,21 @@ interface Administrator {
 
   </section>
 }
+          @if (view === 'experiences') {
+            <app-experiences-panel />
+          }
+          @if (view === 'team') {
+            <app-team-members-panel />
+          }
+          @if (view === 'process') {
+            <app-process-steps-panel />
+          }
+          @if (view === 'pricing') {
+            <app-pricing-policies-panel />
+          }
+          @if (view === 'faqs') {
+            <app-faqs-panel />
+          }
           @if (view === 'administrators' && currentAdminRole === 'SUPER_ADMIN') {
             <section class="administrator-page">
 
@@ -2031,8 +2428,13 @@ export class AppComponent {
   | 'editor'
   | 'skills'
   | 'services'
+  | 'process'
+  | 'pricing'
+  | 'faqs'
   | 'profile'
+  | 'team'
   | 'testimonials'
+  | 'experiences'
   | 'inquiries'
   | 'administrators' = 'overview';
 
@@ -2053,6 +2455,8 @@ export class AppComponent {
   inquiries: Inquiry[] = [];
   inquirySearchTerm = '';
   inquiryFilter = 'ALL';
+  inquiryTypeFilter: 'ALL' | 'QUOTE' | 'GENERAL' = 'ALL';
+  inquiryNotesDraft: Record<string, string> = {};
   selectedInquiryId = '';
 
 testimonialForm: Testimonial = this.emptyTestimonial();
@@ -2094,11 +2498,29 @@ testimonialFilter = 'ALL';
   form: Project = this.emptyProject();
   skillForm: Skill = this.emptySkill();
   serviceForm: ServiceItem = this.emptyService();
+  serviceFeaturesText = '';
+  serviceDeliverablesText = '';
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private adminSession: AdminSessionService
+  ) {
+    this.adminSession.unauthorized$.subscribe(message => {
+      if (this.token) {
+        this.logout(false, message);
+      }
+    });
+
     if (this.token) {
       this.loadCurrentAdmin();
       this.loadOverviewData();
+    }
+  }
+
+  @HostListener('window:storage', ['$event'])
+  onStorageChange(event: StorageEvent): void {
+    if (event.key === ADMIN_TOKEN_KEY && !event.newValue && this.token) {
+      this.logout(false, 'Signed out in another browser tab.');
     }
   }
 
@@ -2263,7 +2685,16 @@ get repliedInquiriesCount(): number {
     return {
       id: '',
       title: '',
+      slug: '',
+      shortDescription: '',
       description: '',
+      targetAudience: '',
+      keyFeaturesJson: '',
+      deliverablesJson: '',
+      startingPriceLabel: '',
+      deliveryTimeline: '',
+      ctaLabel: 'Explore Service',
+      overviewDetails: '',
       icon: '',
       displayOrder: 0,
       published: false
@@ -2292,11 +2723,11 @@ get repliedInquiriesCount(): number {
         }
 
         this.token = response.accessToken;
-        localStorage.setItem('webora_admin_token', this.token);
+        this.adminSession.setToken(this.token);
         this.loadCurrentAdmin();
         this.password = '';
         this.busy = false;
-        this.loadProjects();
+        this.loadOverviewData();
       },
       error: err => {
         this.error = this.errorMessage(
@@ -2308,22 +2739,73 @@ get repliedInquiriesCount(): number {
     });
   }
 
-  logout(): void {
+  logout(revokeRemote = true, sessionMessage = ''): void {
+    const tokenToRevoke = this.token;
+    if (revokeRemote && tokenToRevoke) {
+      this.http.post(
+        `${API_URL}/auth/logout`,
+        {},
+        { headers: new HttpHeaders({ Authorization: `Bearer ${tokenToRevoke}` }) }
+      ).subscribe({ error: () => {} });
+    }
+
     this.token = '';
     this.currentAdminEmail = '';
     this.currentAdminRole = '';
-    localStorage.removeItem('webora_admin_token');
+    this.adminSession.clearToken();
 
     this.projects = [];
     this.skills = [];
     this.services = [];
+    this.testimonials = [];
+    this.inquiries = [];
+    this.administrators = [];
+
+    this.form = this.emptyProject();
+    this.skillForm = this.emptySkill();
+    this.serviceForm = this.emptyService();
+    this.profileForm = this.emptyProfile();
+    this.testimonialForm = this.emptyTestimonial();
+
+    this.editingId = '';
+    this.editingSkillId = '';
+    this.editingServiceId = '';
+    this.editingTestimonialId = '';
+    this.selectedInquiryId = '';
+    this.technologyText = '';
+    this.selectedFile = null;
+    this.imagePreview = '';
+
+    this.searchTerm = '';
+    this.statusFilter = 'ALL';
+    this.skillSearchTerm = '';
+    this.serviceSearchTerm = '';
+    this.testimonialSearchTerm = '';
+    this.testimonialFilter = 'ALL';
+    this.inquirySearchTerm = '';
+    this.inquiryFilter = 'ALL';
+    this.inquiryTypeFilter = 'ALL';
+    this.inquiryNotesDraft = {};
+    this.administratorEmail = '';
+    this.administratorPassword = '';
 
     this.view = 'overview';
-    this.error = '';
-    this.success = '';
-
+    this.mobileMenu = false;
     this.showSkillForm = false;
     this.showServiceForm = false;
+    this.showTestimonialForm = false;
+    this.loading = false;
+    this.contentLoading = false;
+    this.busy = false;
+    this.uploading = false;
+    this.administratorLoading = false;
+    this.administratorSaving = false;
+    this.error = sessionMessage;
+    this.success = '';
+
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }
 
   loadProjects(): void {
@@ -2361,8 +2843,13 @@ get repliedInquiriesCount(): number {
     | 'editor'
     | 'skills'
     | 'services'
+    | 'process'
+    | 'pricing'
+    | 'faqs'
     | 'profile'
+    | 'team'
     | 'testimonials'
+    | 'experiences'
     | 'inquiries'
     | 'administrators'
 ): void {
@@ -2855,6 +3342,8 @@ get repliedInquiriesCount(): number {
   openNewService(): void {
   this.editingServiceId = '';
   this.serviceForm = this.emptyService();
+  this.serviceFeaturesText = '';
+  this.serviceDeliverablesText = '';
   this.showServiceForm = true;
   this.error = '';
   this.success = '';
@@ -2865,6 +3354,8 @@ get repliedInquiriesCount(): number {
 editService(service: ServiceItem): void {
   this.editingServiceId = service.id;
   this.serviceForm = { ...service };
+  this.serviceFeaturesText = this.jsonArrayToLines(service.keyFeaturesJson);
+  this.serviceDeliverablesText = this.jsonArrayToLines(service.deliverablesJson);
   this.showServiceForm = true;
   this.error = '';
   this.success = '';
@@ -2876,6 +3367,23 @@ editService(service: ServiceItem): void {
     this.showServiceForm = false;
     this.editingServiceId = '';
     this.serviceForm = this.emptyService();
+    this.serviceFeaturesText = '';
+    this.serviceDeliverablesText = '';
+  }
+
+  private jsonArrayToLines(raw?: string | null): string {
+    if (!raw) return '';
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.join('\n') : raw;
+    } catch {
+      return raw;
+    }
+  }
+
+  private linesToJsonArray(lines: string): string | null {
+    const items = lines.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    return items.length > 0 ? JSON.stringify(items) : null;
   }
 
   saveService(): void {
@@ -2897,7 +3405,16 @@ editService(service: ServiceItem): void {
       description: this.serviceForm.description.trim(),
       icon: this.serviceForm.icon?.trim() || null,
       displayOrder: Number(this.serviceForm.displayOrder) || 0,
-      published: this.serviceForm.published
+      published: this.serviceForm.published,
+      slug: this.serviceForm.slug?.trim() || null,
+      shortDescription: this.serviceForm.shortDescription?.trim() || null,
+      targetAudience: this.serviceForm.targetAudience?.trim() || null,
+      keyFeaturesJson: this.linesToJsonArray(this.serviceFeaturesText),
+      deliverablesJson: this.linesToJsonArray(this.serviceDeliverablesText),
+      startingPriceLabel: this.serviceForm.startingPriceLabel?.trim() || null,
+      deliveryTimeline: this.serviceForm.deliveryTimeline?.trim() || null,
+      ctaLabel: this.serviceForm.ctaLabel?.trim() || null,
+      overviewDetails: this.serviceForm.overviewDetails?.trim() || null
     };
 
     this.busy = true;
@@ -2940,7 +3457,16 @@ editService(service: ServiceItem): void {
       description: service.description,
       icon: service.icon,
       displayOrder: service.displayOrder,
-      published
+      published,
+      slug: service.slug || null,
+      shortDescription: service.shortDescription || null,
+      targetAudience: service.targetAudience || null,
+      keyFeaturesJson: service.keyFeaturesJson || null,
+      deliverablesJson: service.deliverablesJson || null,
+      startingPriceLabel: service.startingPriceLabel || null,
+      deliveryTimeline: service.deliveryTimeline || null,
+      ctaLabel: service.ctaLabel || null,
+      overviewDetails: service.overviewDetails || null
     };
 
     this.http.put(
@@ -3195,7 +3721,16 @@ private emptyProfile(): SiteProfile {
     resumeUrl: '',
     githubUrl: '',
     linkedinUrl: '',
-    websiteUrl: ''
+    websiteUrl: '',
+    companyTagline: '',
+    companyStory: '',
+    differentiatorsJson: '',
+    whatsappNumber: '',
+    supportEmail: '',
+    businessHours: '',
+    responseSla: '',
+    footerTagline: '',
+    logoUrl: ''
   };
 }
 
@@ -3221,7 +3756,16 @@ loadProfile(): void {
         resumeUrl: response.resumeUrl ?? '',
         githubUrl: response.githubUrl ?? '',
         linkedinUrl: response.linkedinUrl ?? '',
-        websiteUrl: response.websiteUrl ?? ''
+        websiteUrl: response.websiteUrl ?? '',
+        companyTagline: response.companyTagline ?? '',
+        companyStory: response.companyStory ?? '',
+        differentiatorsJson: response.differentiatorsJson ?? '',
+        whatsappNumber: response.whatsappNumber ?? '',
+        supportEmail: response.supportEmail ?? '',
+        businessHours: response.businessHours ?? '',
+        responseSla: response.responseSla ?? '',
+        footerTagline: response.footerTagline ?? '',
+        logoUrl: response.logoUrl ?? ''
       };
 
       this.contentLoading = false;
@@ -3252,7 +3796,16 @@ saveProfile(): void {
     resumeUrl: this.profileForm.resumeUrl,
     githubUrl: this.profileForm.githubUrl,
     linkedinUrl: this.profileForm.linkedinUrl,
-    websiteUrl: this.profileForm.websiteUrl
+    websiteUrl: this.profileForm.websiteUrl,
+    companyTagline: this.profileForm.companyTagline || null,
+    companyStory: this.profileForm.companyStory || null,
+    differentiatorsJson: this.profileForm.differentiatorsJson || null,
+    whatsappNumber: this.profileForm.whatsappNumber?.trim() || null,
+    supportEmail: this.profileForm.supportEmail?.trim() || null,
+    businessHours: this.profileForm.businessHours?.trim() || null,
+    responseSla: this.profileForm.responseSla?.trim() || null,
+    footerTagline: this.profileForm.footerTagline?.trim() || null,
+    logoUrl: this.profileForm.logoUrl?.trim() || null
   };
 
   this.http.put<SiteProfile>(
@@ -3288,6 +3841,10 @@ private emptyTestimonial(): Testimonial {
     company: '',
     content: '',
     avatarUrl: '',
+    mediaType: 'WRITTEN',
+    videoUrl: '',
+    thumbnailUrl: '',
+    projectTitle: '',
     displayOrder: 1,
     published: false
   };
@@ -3302,7 +3859,8 @@ get filteredTestimonials(): Testimonial[] {
       item.name.toLowerCase().includes(search) ||
       (item.role || '').toLowerCase().includes(search) ||
       (item.company || '').toLowerCase().includes(search) ||
-      item.content.toLowerCase().includes(search);
+      (item.projectTitle || '').toLowerCase().includes(search) ||
+      (item.content || '').toLowerCase().includes(search);
 
     const matchesFilter =
       this.testimonialFilter === 'ALL' ||
@@ -3345,7 +3903,14 @@ startTestimonialCreate(): void {
 
 editTestimonial(item: Testimonial): void {
   this.editingTestimonialId = item.id || '';
-  this.testimonialForm = { ...item };
+  this.testimonialForm = {
+    ...item,
+    mediaType: item.mediaType === 'VIDEO' ? 'VIDEO' : 'WRITTEN',
+    videoUrl: item.videoUrl || '',
+    thumbnailUrl: item.thumbnailUrl || '',
+    projectTitle: item.projectTitle || '',
+    content: item.content || ''
+  };
   this.showTestimonialForm = true;
   this.error = '';
   this.success = '';
@@ -3358,11 +3923,17 @@ cancelTestimonialEdit(): void {
 }
 
 saveTestimonial(): void {
-  if (
-    !this.testimonialForm.name.trim() ||
-    !this.testimonialForm.content.trim()
-  ) {
-    this.error = 'Name and testimonial content are required.';
+  const isVideo = this.testimonialForm.mediaType === 'VIDEO';
+  if (!this.testimonialForm.name.trim()) {
+    this.error = 'Name is required.';
+    return;
+  }
+  if (!isVideo && !this.testimonialForm.content.trim()) {
+    this.error = 'Written testimonial content is required.';
+    return;
+  }
+  if (isVideo && !this.testimonialForm.videoUrl?.trim()) {
+    this.error = 'Video URL is required for video testimonials.';
     return;
   }
 
@@ -3376,6 +3947,10 @@ saveTestimonial(): void {
     company: this.testimonialForm.company,
     content: this.testimonialForm.content.trim(),
     avatarUrl: this.testimonialForm.avatarUrl,
+    mediaType: isVideo ? 'VIDEO' : 'WRITTEN',
+    videoUrl: isVideo ? (this.testimonialForm.videoUrl?.trim() || null) : null,
+    thumbnailUrl: isVideo ? (this.testimonialForm.thumbnailUrl?.trim() || null) : null,
+    projectTitle: this.testimonialForm.projectTitle?.trim() || null,
     displayOrder: Number(this.testimonialForm.displayOrder),
     published: this.testimonialForm.published
   };
@@ -3420,6 +3995,10 @@ toggleTestimonialStatus(item: Testimonial): void {
     company: item.company,
     content: item.content,
     avatarUrl: item.avatarUrl,
+    mediaType: item.mediaType || 'WRITTEN',
+    videoUrl: item.videoUrl || null,
+    thumbnailUrl: item.thumbnailUrl || null,
+    projectTitle: item.projectTitle || null,
     displayOrder: item.displayOrder,
     published: !item.published
   };
@@ -3468,6 +4047,10 @@ deleteTestimonial(item: Testimonial): void {
 
 // INQUIRY MANAGEMENT
 
+get quoteInquiriesCount(): number {
+  return this.inquiries.filter(item => item.inquiryType === 'QUOTE').length;
+}
+
 get filteredInquiries(): Inquiry[] {
   const term = this.inquirySearchTerm.trim().toLowerCase();
 
@@ -3477,13 +4060,20 @@ get filteredInquiries(): Inquiry[] {
       item.name.toLowerCase().includes(term) ||
       item.email.toLowerCase().includes(term) ||
       (item.subject || '').toLowerCase().includes(term) ||
+      (item.companyName || '').toLowerCase().includes(term) ||
+      (item.selectedPackage || '').toLowerCase().includes(term) ||
       item.message.toLowerCase().includes(term);
 
     const matchesStatus =
       this.inquiryFilter === 'ALL' ||
       item.status === this.inquiryFilter;
 
-    return matchesSearch && matchesStatus;
+    const normalizedType = item.inquiryType === 'QUOTE' ? 'QUOTE' : 'GENERAL';
+    const matchesType =
+      this.inquiryTypeFilter === 'ALL' ||
+      normalizedType === this.inquiryTypeFilter;
+
+    return matchesSearch && matchesStatus && matchesType;
   });
 }
 
@@ -3497,6 +4087,11 @@ loadInquiries(): void {
   ).subscribe({
     next: response => {
       this.inquiries = response || [];
+      const drafts: Record<string, string> = {};
+      for (const item of this.inquiries) {
+        drafts[item.id] = item.internalNotes || '';
+      }
+      this.inquiryNotesDraft = drafts;
       this.contentLoading = false;
     },
     error: err => {
@@ -3538,6 +4133,42 @@ updateInquiryStatus(
       );
     }
   });
+}
+
+saveInquiryNotes(inquiry: Inquiry): void {
+  this.error = '';
+  this.success = '';
+  this.busy = true;
+
+  this.http.patch<Inquiry>(
+    `${API_URL}/admin/inquiries/${inquiry.id}/notes`,
+    { internalNotes: this.inquiryNotesDraft[inquiry.id] || '' },
+    { headers: this.authHeaders() }
+  ).subscribe({
+    next: updated => {
+      this.busy = false;
+      this.success = 'Internal notes saved.';
+      this.inquiries = this.inquiries.map(item => item.id === updated.id ? updated : item);
+      this.inquiryNotesDraft[updated.id] = updated.internalNotes || '';
+    },
+    error: err => {
+      this.busy = false;
+      this.error = this.errorMessage(
+        err,
+        'Could not save internal notes.'
+      );
+    }
+  });
+}
+
+isSafeUrl(url?: string | null): boolean {
+  if (!url || !url.trim()) return false;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 deleteInquiry(inquiry: Inquiry): void {

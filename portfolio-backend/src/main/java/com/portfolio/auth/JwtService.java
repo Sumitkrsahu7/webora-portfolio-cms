@@ -39,11 +39,16 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
+        int tokenVersion = userDetails instanceof AdminPrincipal principal
+            ? principal.getTokenVersion()
+            : 0;
+
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
             .subject(userDetails.getUsername())
+            .claim("tv", tokenVersion)
             .issuedAt(now)
             .expiration(expiration)
             .signWith(signingKey)
@@ -54,12 +59,24 @@ public class JwtService {
         return extractAllClaims(token).getSubject();
     }
 
+    public int extractTokenVersion(String token) {
+        Number tv = extractAllClaims(token).get("tv", Number.class);
+        return tv != null ? tv.intValue() : 0;
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
+        Claims claims = extractAllClaims(token);
+        String username = claims.getSubject();
+        Number tv = claims.get("tv", Number.class);
+        int tokenVersion = tv != null ? tv.intValue() : 0;
+
+        boolean versionMatches = !(userDetails instanceof AdminPrincipal principal)
+            || principal.getTokenVersion() == tokenVersion;
 
         return username.equals(userDetails.getUsername())
-            && extractAllClaims(token).getExpiration().after(new Date())
-            && userDetails.isEnabled();
+            && claims.getExpiration().after(new Date())
+            && userDetails.isEnabled()
+            && versionMatches;
     }
 
     public long getExpirationSeconds() {

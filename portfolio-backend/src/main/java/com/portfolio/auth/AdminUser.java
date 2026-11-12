@@ -23,6 +23,9 @@ public class AdminUser {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion = 0;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -79,5 +82,13 @@ public class AdminUser {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 }

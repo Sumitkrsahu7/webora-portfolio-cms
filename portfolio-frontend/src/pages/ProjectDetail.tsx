@@ -55,7 +55,7 @@ export default function ProjectDetail() {
       {shortDesc && <p className="detail-intro">{shortDesc}</p>}
 
       {project.thumbnailUrl && (
-        <img className="detail-image" src={assetUrl(project.thumbnailUrl)} alt={project.title} />
+        <img className="detail-image" src={assetUrl(project.thumbnailUrl, 1400)} alt={project.title} />
       )}
 
       <div className="detail-body">
@@ -72,7 +72,7 @@ export default function ProjectDetail() {
               {project.images.map((image) => (
                 <img
                   key={image.id}
-                  src={assetUrl(image.imageUrl)}
+                  src={assetUrl(image.imageUrl, 1400)}
                   alt={image.altText || project.title}
                   loading="lazy"
                 />

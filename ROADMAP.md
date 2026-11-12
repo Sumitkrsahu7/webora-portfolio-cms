@@ -90,18 +90,27 @@ This document tracks the implementation progress, production readiness, and futu
 - [x] Typography and spacing normalization (`hero h1` and `page-title` clamping, consistent section padding)
 - [x] Responsive navigation & drawer usability (React hamburger toggle fix, admin backdrop & Escape handling)
 - [x] Cross-device responsive tuning across all 9 viewports (320px to 1920px)
+- [x] Responsive CSS media query cascade order normalization (1500px -> 960px -> 900px -> 700px -> 650px -> 390px)
 - [x] WCAG 2.2 accessibility improvements (:focus-visible high-contrast rings, 44px min touch targets, ARIA live regions)
+- [x] Zero-CLS skeleton shimmer states across Homepage featured projects, Capabilities, and Testimonials
+- [x] Project card baseline flexbox alignment (equalized vertical tag alignment across rows)
+- [x] Typography hierarchy balancing (`.contact-section h2` normalized to maintain Hero headline prominence)
 - [x] Angular Admin UI polish (styled horizontal scrollbars for tables, refined empty states, offline production bundling)
 
-## Milestone 8 — Future Enhancements
+## Milestone 8 — Premium Developer Expansion & Performance (In Progress)
 
-- [ ] Automated end-to-end integration tests
-- [ ] React component unit tests
-- [ ] Angular component unit tests
-- [ ] SEO metadata and sitemap generation
-- [ ] Advanced dashboard analytics & activity logs
-- [ ] Inquiry email notifications
+- [x] Backend database query optimization: Added `@BatchSize(size = 25)` and `@EntityGraph` to eliminate N+1 WAN latency
+- [x] Client-side Stale-While-Revalidate (SWR) cache engine with `sessionStorage` fallback & 5-minute fresh TTL
+- [x] Responsive Cloudinary image transformation integration (`f_auto,q_auto,w_*`)
+- [x] Route hover prefetching (`prefetchRouteData`) across all navigation items and footer links
+- [x] Dedicated interactive Curriculum Vitae / Resume page (`/resume`, `/cv`) with custom `@media print` recruiter PDF layout
+- [x] Career Journey & Experience timeline module (`/experience`, `/careers`) with Flyway `V7__create_experiences.sql`
+- [x] Dynamic profile integration on `/profile` connecting live backend profile data with social links
+- [x] Global Command Palette (`Ctrl+K` / `Cmd+K`) with fuzzy navigation, email copying, and print triggers
+- [ ] Inquiry CRM enhancement (Extended statuses, priority, internal notes, follow-up dates)
+- [ ] Native cookieless portfolio privacy analytics engine
+- [ ] Technical engineering blog & case study publisher
 
 ---
 
-**Current Status:** All core services (Frontend, Admin, Backend, Database) verified and operational. Backend unit tests pass 32/32 (`BUILD SUCCESS`). Frontend and Angular Admin bundles build cleanly with zero errors. All security hardening, caching, accessibility, responsive, and UI enhancements complete.
+**Current Status:** Performance optimization pass (N+1 query resolution, SWR caching, Cloudinary delivery, route prefetching), Interactive Resume with Print CSS, Experience Timeline (`V7` Flyway migration & APIs), Dynamic Profile, and Global Command Palette (`Ctrl+K`) are fully implemented and verified. Backend unit tests pass 32/32 (`BUILD SUCCESS`), React Vite bundle compiles in 7.8s (`321 kB / 98 kB gzip`), and Angular Admin builds cleanly.

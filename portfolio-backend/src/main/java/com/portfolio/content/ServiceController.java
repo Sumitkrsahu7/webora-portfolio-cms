@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -25,6 +26,15 @@ public class ServiceController {
             .toList();
     }
 
+    @GetMapping("/api/public/services/{slug}")
+    public ServiceResponse getPublicServiceBySlug(@PathVariable String slug) {
+        return repository.findBySlugIgnoreCaseAndPublishedTrue(slug)
+            .map(ServiceResponse::from)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Service not found"
+            ));
+    }
+
     @GetMapping("/api/admin/services")
     public List<ServiceResponse> getAdminServices() {
         return repository.findAllByOrderByDisplayOrderAscTitleAsc()
@@ -38,7 +48,9 @@ public class ServiceController {
     public ServiceResponse createService(
         @Valid @RequestBody ServiceRequest request
     ) {
-        ServiceItem item = ServiceItem.create(UUID.randomUUID(), request);
+        UUID id = UUID.randomUUID();
+        String slug = resolveUniqueSlug(request.slug(), request.title(), id);
+        ServiceItem item = ServiceItem.create(id, request, slug);
         return ServiceResponse.from(repository.save(item));
     }
 
@@ -52,7 +64,8 @@ public class ServiceController {
                 HttpStatus.NOT_FOUND, "Service not found"
             ));
 
-        item.update(request);
+        String slug = resolveUniqueSlug(request.slug(), request.title(), id);
+        item.update(request, slug);
         return ServiceResponse.from(repository.save(item));
     }
 
@@ -66,5 +79,26 @@ public class ServiceController {
         }
 
         repository.deleteById(id);
+    }
+
+    private String resolveUniqueSlug(String requestedSlug, String title, UUID selfId) {
+        String base = (requestedSlug != null && !requestedSlug.isBlank())
+            ? requestedSlug.trim()
+            : title.trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+
+        if (base.isEmpty()) {
+            base = "service-" + selfId.toString().substring(0, 8);
+        }
+
+        if (repository.existsBySlugIgnoreCaseAndIdNot(base, selfId)) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "A service with slug '" + base + "' already exists."
+            );
+        }
+        return base;
     }
 }
